@@ -65,11 +65,18 @@ vi.mock("@/server/billing/subscription", () => ({
   customerHasPaidPlan: mocks.customerHasPaidPlan,
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
+  getEnvValueSync: (env: object, name: string) => {
+    const value: unknown = Reflect.get(env, name);
+    return typeof value === "string" && value !== "" ? value : undefined;
+  },
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
 }));
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test double for the workflow binding
-const testEnv = { RANK_CHECK_WORKFLOW: {} } as unknown as Env;
+const testEnv = {
+  RANK_CHECK_WORKFLOW: {},
+  SEO_DATA_MODE: "full",
+} as unknown as Env;
 
 function dueConfig(overrides: Partial<DueConfigRow> = {}): DueConfigRow {
   return {
@@ -105,6 +112,20 @@ describe("runScheduledRankChecks", () => {
       new Map([["config_1", 5]]),
     );
     mocks.getDueConfigsWithOrganization.mockResolvedValue([dueConfig()]);
+  });
+
+  it("does no scheduler work in first_party mode", async () => {
+    const { runScheduledRankChecks } = await import("./scheduledRankChecks");
+    await runScheduledRankChecks({
+      RANK_CHECK_WORKFLOW: {},
+      SEO_DATA_MODE: "first_party",
+    } as unknown as Env);
+
+    expect(mocks.getDueConfigsWithOrganization).not.toHaveBeenCalled();
+    expect(mocks.getKeywordCountsForConfigs).not.toHaveBeenCalled();
+    expect(mocks.claimDueConfig).not.toHaveBeenCalled();
+    expect(mocks.beginRankCheckRun).not.toHaveBeenCalled();
+    expect(mocks.customerHasPaidPlan).not.toHaveBeenCalled();
   });
 
   it("advances a free config with plan_required instead of starting a workflow", async () => {

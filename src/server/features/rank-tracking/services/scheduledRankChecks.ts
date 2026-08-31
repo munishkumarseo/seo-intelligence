@@ -1,12 +1,16 @@
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  getEnvValueSync,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 import {
   computeNextCheckAt,
   devicesCount,
   isScheduledRankTrackingInterval,
 } from "@/shared/rank-tracking";
+import { resolveSeoDataMode } from "@/shared/seo-data-mode";
 
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
@@ -36,6 +40,15 @@ const ALREADY_RUNNING_IDS_CAP = 20;
 // Cron body for the `scheduled` Worker handler: start a rank-check run for every
 // config that's due. Wrapped in `withPgClient` at the entrypoint (server.ts).
 export async function runScheduledRankChecks(env: Env) {
+  const dataMode = resolveSeoDataMode(getEnvValueSync(env, "SEO_DATA_MODE"));
+  if (dataMode === "first_party") {
+    console.log({
+      event: "rank_tracking_scheduler_skipped",
+      reason: "first_party_mode",
+    });
+    return;
+  }
+
   const nowIso = new Date().toISOString();
   const dueConfigs =
     await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);
