@@ -51,7 +51,13 @@ export function FirstPartyActivation({
   });
 
   useEffect(() => {
-    if (step !== "complete" || !projectId || completionRequested.current) return;
+    if (
+      step !== "complete" ||
+      !projectId ||
+      completionRequested.current
+    ) {
+      return;
+    }
     completionRequested.current = true;
     onComplete(projectId);
   }, [onComplete, projectId, step]);
@@ -128,7 +134,9 @@ export function FirstPartyActivation({
         <p className="text-sm text-base-content/60">
           Opening your first-party Overview…
         </p>
-        {isCompleting ? <span className="loading loading-spinner loading-sm" /> : null}
+        {isCompleting ? (
+          <span className="loading loading-spinner loading-sm" />
+        ) : null}
       </div>
     </ActivationFrame>
   );
