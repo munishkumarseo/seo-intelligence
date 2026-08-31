@@ -117,11 +117,14 @@ async function getOpportunities(
   if (!gscConnection) throw new GscNotConnectedError(input.projectId);
 
   const now = opts.now ?? new Date();
-  const dates = resolveCombinedDates(
-    input,
-    ga4Connection?.propertyTimeZone ?? SEARCH_CONSOLE_TIME_ZONE,
-    now,
-  );
+  const dates =
+    !ga4Connection && input.startDate && input.endDate
+      ? { startDate: input.startDate, endDate: input.endDate }
+      : resolveCombinedDates(
+          input,
+          ga4Connection?.propertyTimeZone ?? SEARCH_CONSOLE_TIME_ZONE,
+          now,
+        );
   const gsc = await GscService.getPerformance({
     projectId: input.projectId,
     dimensions: ["page"],
