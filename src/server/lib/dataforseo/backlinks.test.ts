@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
 
 vi.mock("@/server/lib/runtime-env", () => ({
+  getOptionalEnvValue: vi.fn(async () => "full"),
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 

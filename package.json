@@ -66,8 +66,11 @@
       "POLICY_AUD": {
         "description": "Cloudflare Access Application Audience (AUD) tag for this Worker route/domain."
       },
+      "SEO_DATA_MODE": {
+        "description": "SEO data capability mode: `first_party` uses GSC, GA4, and site-audit data only; `full` enables paid-provider-backed features."
+      },
       "DATAFORSEO_API_KEY": {
-        "description": "Base64-encoded `login:password` for DataForSEO API access."
+        "description": "Optional in `first_party`; base64-encoded `login:password` used only when `SEO_DATA_MODE=full`."
       },
       "OAUTH_KV": {
         "description": "KV namespace used by the Cloudflare Workers OAuth provider for MCP client registrations, grants, and tokens."

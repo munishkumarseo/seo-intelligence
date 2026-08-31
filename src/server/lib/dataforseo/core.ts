@@ -9,7 +9,11 @@ import {
   SerpApi,
 } from "dataforseo-client";
 import { AppError } from "@/server/lib/errors";
-import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import {
+  getOptionalEnvValue,
+  getRequiredEnvValue,
+} from "@/server/lib/runtime-env";
+import { resolveSeoDataMode } from "@/shared/seo-data-mode";
 import type { ErrorCode } from "@/shared/error-codes";
 
 const API_BASE = "https://api.dataforseo.com";
@@ -70,6 +74,17 @@ function createAuthenticatedFetch(
   maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
 ) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    const dataMode = resolveSeoDataMode(
+      await getOptionalEnvValue("SEO_DATA_MODE"),
+    );
+    if (dataMode === "first_party") {
+      throw new AppError(
+        "FORBIDDEN",
+        "DataForSEO features are disabled in first-party mode.",
+        { provider: "dataforseo", dataMode },
+      );
+    }
+
     const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${apiKey}`);

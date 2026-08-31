@@ -20,6 +20,8 @@ import {
 } from "@/server/mcp/context";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
+import { getEnvValueSync } from "@/server/lib/runtime-env";
+import { resolveSeoDataMode, type SeoDataMode } from "@/shared/seo-data-mode";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
 // same CORS surface as the modern handler's.
@@ -75,7 +77,11 @@ function validateLegacyRequest(
   return originRejection ? withMcpCors(originRejection) : undefined;
 }
 
-async function handleLegacyJsonRequest(request: Request, props: McpProps) {
+async function handleLegacyJsonRequest(
+  request: Request,
+  props: McpProps,
+  seoDataMode: SeoDataMode,
+) {
   if (request.method !== "POST") {
     return withMcpCors(
       Response.json(
@@ -97,7 +103,7 @@ async function handleLegacyJsonRequest(request: Request, props: McpProps) {
   // before the request completes. JSON mode silently drops server-to-client
   // requests (sampling/elicitation) and would hang the buffered response —
   // no OpenSEO tool issues them.
-  const server = createOpenSeoMcpServer(props);
+  const server = createOpenSeoMcpServer(props, { seoDataMode });
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
@@ -122,13 +128,17 @@ async function handleLegacyJsonRequest(request: Request, props: McpProps) {
 // way.
 function createRequestHandler(
   props: McpProps,
+  seoDataMode: SeoDataMode,
   allowedOriginHostnames?: string[],
 ) {
-  const modernHandler = createMcpHandler(() => createOpenSeoMcpServer(props), {
-    route: MCP_ROUTE,
-    allowedOriginHostnames,
-    legacy: "reject",
-  });
+  const modernHandler = createMcpHandler(
+    () => createOpenSeoMcpServer(props, { seoDataMode }),
+    {
+      route: MCP_ROUTE,
+      allowedOriginHostnames,
+      legacy: "reject",
+    },
+  );
 
   return async (request: Request, env: unknown, ctx: ExecutionContext) => {
     if (request.method === "OPTIONS") {
@@ -142,8 +152,13 @@ function createRequestHandler(
     }
 
     const rejection = validateLegacyRequest(request, allowedOriginHostnames);
-    return rejection ?? handleLegacyJsonRequest(request, props);
+    return rejection ?? handleLegacyJsonRequest(request, props, seoDataMode);
   };
+}
+
+function seoDataModeFromEnv(env: unknown): SeoDataMode {
+  const envObject = typeof env === "object" && env !== null ? env : {};
+  return resolveSeoDataMode(getEnvValueSync(envObject, "SEO_DATA_MODE"));
 }
 
 export async function handleAuthenticatedOpenSeoMcpRequest(
@@ -170,7 +185,7 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
     return withMcpCors(new Response("Invalid Origin", { status: 403 }));
   }
 
-  return createRequestHandler(result.data, [
+  return createRequestHandler(result.data, seoDataModeFromEnv(env), [
     hostedUrl.hostname,
     SURFMIND_CHROME_EXTENSION_HOSTNAME,
   ])(request, env, ctx);
@@ -198,5 +213,9 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     baseUrl: getPublicOrigin(request),
   });
 
-  return createRequestHandler(props)(request, env, ctx);
+  return createRequestHandler(props, seoDataModeFromEnv(env))(
+    request,
+    env,
+    ctx,
+  );
 }

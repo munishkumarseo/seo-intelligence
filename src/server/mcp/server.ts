@@ -69,6 +69,7 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import type { SeoDataMode } from "@/shared/seo-data-mode";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -94,6 +95,12 @@ type OpenSeoToolDefinition<Input extends ToolSchema> = {
     args: ToolArgs<Input>,
     context: ToolContext,
   ) => CallToolResult | Promise<CallToolResult>;
+};
+
+type ToolAvailability = "first_party" | "paid_provider";
+
+type OpenSeoMcpServerOptions = {
+  seoDataMode: SeoDataMode;
 };
 
 function registerOpenSeoTool<Input extends ToolSchema>(
@@ -125,14 +132,19 @@ function registerOpenSeoTool<Input extends ToolSchema>(
   );
 }
 
-export function createOpenSeoMcpServer(authProps: McpProps) {
+export function createOpenSeoMcpServer(
+  authProps: McpProps,
+  options: OpenSeoMcpServerOptions,
+) {
   const server = new McpServer(
     {
       name: "OpenSEO MCP",
       title: "OpenSEO",
       version: "0.0.12",
       description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+        options.seoDataMode === "first_party"
+          ? "First-party SEO tools for AI agents: Google Search Console, Google Analytics, site audits, project context, and search opportunities."
+          : "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
       websiteUrl: "https://openseo.so",
       icons: [
         {
@@ -144,60 +156,71 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
     },
     {
       instructions:
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
+        options.seoDataMode === "first_party"
+          ? "Use connected Google Search Console, Google Analytics, project context, and site-audit data. Do not invent unavailable market-wide keyword, backlink, or SERP metrics."
+          : "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
     },
   );
 
   const register = <Input extends ToolSchema>(
+    availability: ToolAvailability,
     tool: OpenSeoToolDefinition<Input>,
-  ) => registerOpenSeoTool(server, tool, authProps);
+  ) => {
+    if (
+      availability === "paid_provider" &&
+      options.seoDataMode === "first_party"
+    ) {
+      return;
+    }
+    registerOpenSeoTool(server, tool, authProps);
+  };
 
-  register(whoamiTool);
-  register(listProjectsTool);
-  register(createProjectTool);
-  register(getProjectContextTool);
-  register(updateProjectContextTool);
-  register(listSavedKeywordsTool);
-  register(researchKeywordsTool);
-  register(saveKeywordsTool);
-  register(getDomainOverviewTool);
-  register(getDomainKeywordSuggestionsTool);
-  register(getBacklinksOverviewTool);
-  register(getBacklinksProfileTool);
-  register(getSerpResultsTool);
-  register(createRankTrackerTool);
-  register(getRankTrackerTool);
-  register(addRankTrackingKeywordsTool);
-  register(removeRankTrackingKeywordsTool);
-  register(estimateRankTrackerCostTool);
-  register(runRankTrackerTool);
-  register(getRankedKeywordsTool);
-  register(findSerpCompetitorsTool);
-  register(searchLocalBusinessesTool);
-  register(getLocalSerpResultsTool);
-  register(getGoogleBusinessQuestionsTool);
-  register(getBusinessProfileTool);
-  register(getBusinessReviewsTool);
-  register(getBusinessUpdatesTool);
-  register(listBusinessCategoriesTool);
-  register(getLocalRankGridTool);
-  register(getKeywordMetricsTool);
-  register(getSearchConsolePerformanceTool);
-  register(inspectUrlsTool);
-  register(getGoogleAnalyticsOrganicLandingPagesTool);
-  register(getGoogleAnalyticsPagePerformanceTool);
-  register(getGoogleAnalyticsKeyEventsTool);
-  register(getSearchOpportunitiesTool);
-  register(getGoogleAnalyticsOrganicOverviewTool);
-  register(getGoogleAnalyticsTrafficAcquisitionTool);
-  register(getGoogleAnalyticsMeasurementHealthTool);
-  register(getGoogleAnalyticsEcommercePerformanceTool);
-  register(getGoogleAnalyticsSiteSearchTool);
-  register(getGoogleAnalyticsAudienceBreakdownTool);
-  register(runSiteAuditTool);
-  register(getAuditStatusTool);
-  register(getAuditIssuesTool);
-  register(getAuditPagesTool);
+  register("first_party", whoamiTool);
+  register("first_party", listProjectsTool);
+  register("first_party", createProjectTool);
+  register("first_party", getProjectContextTool);
+  register("first_party", updateProjectContextTool);
+  register("first_party", listSavedKeywordsTool);
+  register("paid_provider", researchKeywordsTool);
+  register("first_party", saveKeywordsTool);
+  register("paid_provider", getDomainOverviewTool);
+  register("paid_provider", getDomainKeywordSuggestionsTool);
+  register("paid_provider", getBacklinksOverviewTool);
+  register("paid_provider", getBacklinksProfileTool);
+  register("paid_provider", getSerpResultsTool);
+  register("paid_provider", createRankTrackerTool);
+  register("paid_provider", getRankTrackerTool);
+  register("paid_provider", addRankTrackingKeywordsTool);
+  register("paid_provider", removeRankTrackingKeywordsTool);
+  register("paid_provider", estimateRankTrackerCostTool);
+  register("paid_provider", runRankTrackerTool);
+  register("paid_provider", getRankedKeywordsTool);
+  register("paid_provider", findSerpCompetitorsTool);
+  register("paid_provider", searchLocalBusinessesTool);
+  register("paid_provider", getLocalSerpResultsTool);
+  register("paid_provider", getGoogleBusinessQuestionsTool);
+  register("paid_provider", getBusinessProfileTool);
+  register("paid_provider", getBusinessReviewsTool);
+  register("paid_provider", getBusinessUpdatesTool);
+  register("paid_provider", listBusinessCategoriesTool);
+  register("paid_provider", getLocalRankGridTool);
+  register("paid_provider", getKeywordMetricsTool);
+  register("first_party", getSearchConsolePerformanceTool);
+  register("first_party", inspectUrlsTool);
+  register("first_party", getGoogleAnalyticsOrganicLandingPagesTool);
+  register("first_party", getGoogleAnalyticsPagePerformanceTool);
+  register("first_party", getGoogleAnalyticsKeyEventsTool);
+  register("first_party", getSearchOpportunitiesTool);
+  register("first_party", getGoogleAnalyticsOrganicOverviewTool);
+  register("first_party", getGoogleAnalyticsTrafficAcquisitionTool);
+  register("first_party", getGoogleAnalyticsMeasurementHealthTool);
+  register("first_party", getGoogleAnalyticsEcommercePerformanceTool);
+  register("first_party", getGoogleAnalyticsSiteSearchTool);
+  register("first_party", getGoogleAnalyticsAudienceBreakdownTool);
+  register("first_party", runSiteAuditTool);
+  register("first_party", getAuditStatusTool);
+  register("first_party", getAuditIssuesTool);
+  register("first_party", getAuditPagesTool);
 
   return server;
 }

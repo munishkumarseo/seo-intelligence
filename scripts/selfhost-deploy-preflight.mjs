@@ -35,7 +35,7 @@ if (!existsSync(envFile)) {
     "",
     `  ${cmd("cp .env.selfhost.example .env.selfhost")}`,
     "",
-    `then set ${em("DATAFORSEO_API_KEY")} and ${em("ACCESS_ALLOWED_EMAILS")}.`,
+    `then set ${em("ACCESS_ALLOWED_EMAILS")}. ${em("SEO_DATA_MODE")} defaults to first_party; DataForSEO is needed only for full mode.`,
   );
 }
 const env = {};
@@ -43,9 +43,15 @@ for (const line of readFileSync(envFile, "utf8").split("\n")) {
   const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
   if (match) env[match[1]] = match[2].replace(/^(["'])(.*)\1$/, "$2");
 }
-if (!env.DATAFORSEO_API_KEY) {
+const seoDataMode = (env.SEO_DATA_MODE || "first_party").trim();
+if (seoDataMode !== "first_party" && seoDataMode !== "full") {
   fail(
-    `${em("DATAFORSEO_API_KEY")} is not set in ${envFile} — see docs/DATAFORSEO_API_KEY.md for how to get one.`,
+    `${em("SEO_DATA_MODE")} must be ${em("first_party")} or ${em("full")}; got ${em(seoDataMode)}.`,
+  );
+}
+if (seoDataMode === "full" && !env.DATAFORSEO_API_KEY) {
+  fail(
+    `${em("DATAFORSEO_API_KEY")} is required when SEO_DATA_MODE=full — see docs/DATAFORSEO_API_KEY.md for how to get one.`,
   );
 }
 // When both are set, the deploy provisions no Access resources (hand-managed

@@ -165,6 +165,9 @@ describe("SearchOpportunityService", () => {
       score: null,
       scoreComponents: null,
     });
+    expect(result.scoring.formula).toBe(
+      "round(100 * (0.5 * demand + 0.3 * businessValue + 0.2 * reachability))",
+    );
     expect(result.scoring.businessValueMetric).toBe("sessionKeyEventRate");
     expect(result.warnings).toContain("source_time_zones_differ");
   });

@@ -1,19 +1,44 @@
 # DataForSEO API Key Setup
 
-OpenSEO uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data. It's a pay-as-you-go third-party service unaffiliated with OpenSEO. You need an API key to connect OpenSEO to it.
+DataForSEO is **optional in this fork**. The default `SEO_DATA_MODE=first_party` uses Google Search Console, Google Analytics 4, project context, and first-party site-audit data without calling DataForSEO.
 
-New DataForSEO accounts include $1 of free credit to test with, and the minimum top-up is $50.
+Configure DataForSEO only when you intentionally switch to:
 
-## Get your API key
+```env
+SEO_DATA_MODE=full
+```
 
-1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access?aff=255379) (create an account if you don't have one).
-2. Click "Send by email" to get your credentials.
-3. Copy the longer credentials labelled "Base64" credentials. This is the base64 encoded value of your DataForSEO email and API password in the format `email:password`.
+`full` mode retains upstream-compatible paid-provider features such as external keyword metrics, SERP data, backlink data, competitor research, local SEO datasets, and paid rank tracking.
+
+DataForSEO is a pay-as-you-go third-party service unaffiliated with this project. Its metrics are not synthesized or substituted when the provider is disabled.
+
+## Get your API key for full mode
+
+1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access?aff=255379) and create/sign in to an account.
+2. Obtain your API credentials.
+3. Copy the Base64 credentials representing your DataForSEO login and API password in `email:password` form.
 
 ## Where to set it
 
-Set the value as `DATAFORSEO_API_KEY`:
+Set the value as `DATAFORSEO_API_KEY` **only with `SEO_DATA_MODE=full`**:
 
 - **Docker self-hosting:** in `.env` (see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md)).
-- **Cloudflare self-hosting:** in `.env.selfhost` (see [`SELF_HOSTING_CLOUDFLARE.md`](./SELF_HOSTING_CLOUDFLARE.md)). Legacy button/Wrangler deployments: as a Worker secret in the dashboard under `Settings` -> `Variables & Secrets`.
+- **Cloudflare self-hosting:** in `.env.selfhost` (see [`SELF_HOSTING_CLOUDFLARE.md`](./SELF_HOSTING_CLOUDFLARE.md)).
 - **Local development:** in `.env.local` (see [`LOCAL_DEVELOPMENT.md`](./LOCAL_DEVELOPMENT.md)).
+
+Example:
+
+```env
+SEO_DATA_MODE=full
+DATAFORSEO_API_KEY=<base64-login-password>
+```
+
+## First-party mode
+
+For the core product, keep:
+
+```env
+SEO_DATA_MODE=first_party
+```
+
+`DATAFORSEO_API_KEY` may be omitted entirely. The central DataForSEO transport fails closed in first-party mode before credential lookup or network access, and paid-provider MCP tools and scheduled paid rank tracking are disabled separately.
