@@ -1,6 +1,6 @@
 import type { ProductCapabilities } from "@/shared/product-capabilities";
 
-export type ProjectRouteDecision =
+type ProjectRouteDecision =
   | { kind: "allow" }
   | { kind: "redirect-overview" }
   | { kind: "redirect-gsc-setup" };
