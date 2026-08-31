@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runSelfhostPreflight } from "./selfhost-preflight";
+import { runSelfhostChecks, runSelfhostPreflight } from "./selfhost-preflight";
 
 function itemFor(
   result: ReturnType<typeof runSelfhostPreflight>,
@@ -9,9 +9,61 @@ function itemFor(
 }
 
 describe("runSelfhostPreflight", () => {
+  it("treats missing DataForSEO as intentional in first_party mode", () => {
+    const items = runSelfhostChecks({
+      AUTH_MODE: "local_noauth",
+      SEO_DATA_MODE: "first_party",
+    });
+
+    expect(items).toContainEqual(
+      expect.objectContaining({
+        key: "dataforseo",
+        level: "info",
+      }),
+    );
+  });
+
+  it("defaults to first_party when SEO_DATA_MODE is unset", () => {
+    const items = runSelfhostChecks({ AUTH_MODE: "local_noauth" });
+
+    expect(items).toContainEqual(
+      expect.objectContaining({
+        key: "dataforseo",
+        level: "info",
+      }),
+    );
+  });
+
+  it("keeps the existing DataForSEO validation in full mode", () => {
+    const items = runSelfhostChecks({
+      AUTH_MODE: "local_noauth",
+      SEO_DATA_MODE: "full",
+    });
+
+    expect(items).toContainEqual(
+      expect.objectContaining({
+        key: "dataforseo",
+        level: "warn",
+      }),
+    );
+  });
+
+  it("fails invalid SEO_DATA_MODE instead of silently choosing a mode", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      SEO_DATA_MODE: "paid-ish",
+    });
+
+    expect(result.failed).toBe(true);
+    expect(itemFor(result, "SEO_DATA_MODE")?.level).toBe("fail");
+    expect(itemFor(result, "SEO_DATA_MODE")?.message).toContain(
+      'Invalid SEO_DATA_MODE "paid-ish"',
+    );
+  });
   it("passes the stock Docker setup (local_noauth + DataForSEO key)", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "local_noauth",
+      SEO_DATA_MODE: "full",
       DATAFORSEO_API_KEY: btoa("user@example.com:secret"),
     });
 
@@ -52,6 +104,7 @@ describe("runSelfhostPreflight", () => {
   it("warns on a DataForSEO key that is not base64 login:password", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "local_noauth",
+      SEO_DATA_MODE: "full",
       DATAFORSEO_API_KEY: "raw-dashboard-key",
     });
 

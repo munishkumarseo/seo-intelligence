@@ -4,6 +4,7 @@ import {
   MIN_BETTER_AUTH_SECRET_LENGTH,
   validateTeamDomain,
 } from "@/shared/selfhost-checks";
+import { resolveSeoDataMode } from "@/shared/seo-data-mode";
 
 // Startup preflight for self-host containers: validate the environment BEFORE
 // the multi-minute build/boot so misconfiguration fails in seconds with the
@@ -121,6 +122,31 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
 }
 
 function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
+  let dataMode;
+  try {
+    dataMode = resolveSeoDataMode(get(env, "SEO_DATA_MODE"));
+  } catch (error) {
+    items.push({
+      key: "dataforseo",
+      name: "SEO_DATA_MODE",
+      level: "fail",
+      message:
+        error instanceof Error ? error.message : "Invalid SEO_DATA_MODE.",
+    });
+    return;
+  }
+
+  if (dataMode === "first_party") {
+    items.push({
+      key: "dataforseo",
+      name: "DataForSEO",
+      level: "info",
+      message:
+        "Disabled by SEO_DATA_MODE=first_party; GSC, GA4, and first-party site-audit features remain available.",
+    });
+    return;
+  }
+
   const key = get(env, "DATAFORSEO_API_KEY");
 
   if (!key) {
