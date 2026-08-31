@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ComponentType } from "react";
 import {
   CircleHelp,
@@ -15,6 +16,7 @@ import {
   connectNavGroup,
   getProjectNavGroups,
 } from "@/client/navigation/items";
+import { productCapabilitiesQueryOptions } from "@/client/features/product/productCapabilitiesQuery";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -77,9 +79,13 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
+  const capabilitiesQuery = useQuery(productCapabilitiesQueryOptions());
+  const capabilities = capabilitiesQuery.data;
   const navGroups = [
-    ...(projectId ? getProjectNavGroups(projectId) : []),
-    connectNavGroup,
+    ...(projectId && capabilities
+      ? getProjectNavGroups(projectId, capabilities)
+      : []),
+    ...(capabilities?.dataMode === "full" ? [connectNavGroup] : []),
   ];
   const navigate = useNavigate();
   const location = useLocation();
