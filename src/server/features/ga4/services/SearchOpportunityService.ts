@@ -246,7 +246,8 @@ async function getOpportunities(
     source: {
       searchConsoleSiteUrl: gsc.siteUrl,
       googleAnalyticsPropertyId: ga4?.source.propertyId ?? null,
-      googleAnalyticsPropertyDisplayName: ga4?.source.propertyDisplayName ?? null,
+      googleAnalyticsPropertyDisplayName:
+        ga4?.source.propertyDisplayName ?? null,
     },
     request: {
       dateRange: dates,
