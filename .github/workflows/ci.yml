@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CI checks
-        run: pnpm run ci:check
+      - name: Diagnose onboarding formatting
+        run: |
+          pnpm exec prettier --write src/client/features/onboarding/FirstPartyActivation.tsx
+          git diff -- src/client/features/onboarding/FirstPartyActivation.tsx
+          exit 1
 
       - name: Run tests
         run: pnpm run test:ci
