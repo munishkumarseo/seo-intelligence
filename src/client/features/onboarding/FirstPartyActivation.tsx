@@ -51,11 +51,7 @@ export function FirstPartyActivation({
   });
 
   useEffect(() => {
-    if (
-      step !== "complete" ||
-      !projectId ||
-      completionRequested.current
-    ) {
+    if (step !== "complete" || !projectId || completionRequested.current) {
       return;
     }
     completionRequested.current = true;
