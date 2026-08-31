@@ -138,9 +138,11 @@ function getProjectNavItems(projectId: string) {
 }
 
 function getFirstPartyProjectNavItems(projectId: string) {
-  return firstPartyProjectNavItems.map((item) => ({
+  return firstPartyProjectNavItems.map(({ hrefTemplate, ...item }) => ({
     ...item,
-    href: item.hrefTemplate?.replace("$projectId", projectId) ?? null,
+    ...(hrefTemplate
+      ? { href: hrefTemplate.replace("$projectId", projectId) }
+      : {}),
     params: { projectId },
     search: {},
   }));
