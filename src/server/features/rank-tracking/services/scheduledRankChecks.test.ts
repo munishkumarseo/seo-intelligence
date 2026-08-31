@@ -116,10 +116,11 @@ describe("runScheduledRankChecks", () => {
 
   it("does no scheduler work in first_party mode", async () => {
     const { runScheduledRankChecks } = await import("./scheduledRankChecks");
-    await runScheduledRankChecks({
-      RANK_CHECK_WORKFLOW: {},
+    const firstPartyEnv: Env = {
+      ...testEnv,
       SEO_DATA_MODE: "first_party",
-    } as unknown as Env);
+    };
+    await runScheduledRankChecks(firstPartyEnv);
 
     expect(mocks.getDueConfigsWithOrganization).not.toHaveBeenCalled();
     expect(mocks.getKeywordCountsForConfigs).not.toHaveBeenCalled();
