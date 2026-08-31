@@ -1,4 +1,4 @@
-export type FirstPartyActivationStep = "gsc" | "ga4" | "complete";
+type FirstPartyActivationStep = "gsc" | "ga4" | "complete";
 export type Ga4ActivationChoice = "undecided" | "connect" | "skipped";
 
 export function getFirstPartyActivationStep({
