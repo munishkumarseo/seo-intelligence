@@ -44,9 +44,9 @@ declare namespace Cloudflare {
     TURNSTILE_SECRET_KEY?: string;
     TURNSTILE_SITE_KEY?: string;
 
-    // DataForSEO is optional because first_party is the fork default.
-    // In full mode this remains the API Basic auth value (base64 of login:password).
-    DATAFORSEO_API_KEY?: string;
+    // DATAFORSEO_API_KEY is declared by worker-configuration.d.ts. Runtime
+    // first-party mode does not require a usable value; deployment/preflight
+    // and the central DataForSEO transport enforce that behavior.
 
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
