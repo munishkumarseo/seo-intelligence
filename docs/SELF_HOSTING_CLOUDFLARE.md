@@ -1,34 +1,30 @@
 # Cloudflare Self-Hosting
 
-Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan.
+Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions the application infrastructure and Cloudflare Access login gate.
+
+This fork defaults to `SEO_DATA_MODE=first_party`, so a DataForSEO account is not a prerequisite.
 
 Related guides:
 
 - [Operations](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): connect the MCP server, telemetry.
+- [Google Search Console](./SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md): connect first-party Search Console data.
+- [Google Analytics](./SELF_HOSTING_GOOGLE_ANALYTICS.md): connect GA4 data.
+- [DataForSEO](./DATAFORSEO_API_KEY.md): optional, only for `SEO_DATA_MODE=full`.
 - [Legacy deployments](./SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.
 
 ## Prerequisites
 
 - **Node 22.6 or newer** and **pnpm** (`corepack enable` sets it up).
-- **A Cloudflare account with R2 enabled.** Activating R2 requires a payment method on file, even within its free tier — if you have never used R2, open `R2` in the Cloudflare dashboard once.
-- **A DataForSEO account** — see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md).
+- **A Cloudflare account with R2 enabled.** Activating R2 may require a payment method on file even when usage remains within its free tier.
+- **No paid SEO-data provider is required for first-party mode.**
 
-## 1) Clone your OpenSEO repo
+To use GSC/GA4 intelligence, configure the existing Google OAuth integration after deployment. To intentionally enable upstream DataForSEO-backed features, switch to `SEO_DATA_MODE=full` and follow [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md).
 
-Fork `every-app/open-seo` on GitHub if you want a repo you control, then clone it locally:
-
-```bash
-git clone https://github.com/YOUR_GITHUB_USER/open-seo.git
-cd open-seo
-corepack enable
-pnpm install
-```
-
-If you do not need a fork, clone the upstream repo instead:
+## 1) Clone your fork
 
 ```bash
-git clone https://github.com/every-app/open-seo.git
-cd open-seo
+git clone https://github.com/YOUR_GITHUB_USER/seo-intelligence.git
+cd seo-intelligence
 corepack enable
 pnpm install
 ```
@@ -44,10 +40,27 @@ Already logged in from before without the `access:write` scope? Run `pnpm alchem
 
 ## 3) Create `.env.selfhost`
 
-Copy the template and fill in the required values:
+Copy the template:
 
 ```bash
 cp .env.selfhost.example .env.selfhost
+```
+
+The default template contains:
+
+```env
+SEO_DATA_MODE=first_party
+```
+
+Set `ACCESS_ALLOWED_EMAILS` (or provide your own `TEAM_DOMAIN` + `POLICY_AUD`). No DataForSEO key is required in first-party mode.
+
+For GSC and GA4 integrations, configure the Google OAuth variables documented in the Google integration guides. `BETTER_AUTH_SECRET` protects stored OAuth tokens and should remain a strong secret.
+
+If you intentionally want paid-provider features instead:
+
+```env
+SEO_DATA_MODE=full
+DATAFORSEO_API_KEY=<base64-login-password>
 ```
 
 ## 4) Deploy
@@ -56,7 +69,9 @@ cp .env.selfhost.example .env.selfhost
 pnpm deploy:selfhost --yes
 ```
 
-This provisions the D1 database, KV namespaces, and R2 bucket, applies the database migrations, deploys the Worker, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
+The deploy preflight accepts first-party mode without `DATAFORSEO_API_KEY`. In `full` mode it fails early if the key is missing.
+
+This provisions the D1 database, KV namespaces, and R2 bucket, applies database migrations, deploys the Worker, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one can be provisioned during setup.
 
 To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://your-team.cloudflareaccess.com`) and `POLICY_AUD` (the application's audience tag) in `.env.selfhost` — the deploy then provisions no Access resources.
 
@@ -64,29 +79,31 @@ To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://y
 
 1. Open the Worker URL printed at the end of the deploy.
 2. Sign in with Cloudflare Access.
-3. OpenSEO should load after login.
+3. Check `https://<your-worker-hostname>/api/health`.
+4. In first-party mode, the DataForSEO setup check should report that the provider is intentionally disabled rather than required.
+5. Connect GSC and GA4 when you are ready to use their reports and search-opportunity intelligence.
 
-If it doesn't, see Troubleshooting below.
-
-## Updating to the latest OpenSEO version
+## Updating
 
 ```bash
-git pull        # or: git fetch upstream && git merge upstream/main, if you forked
+git pull
 pnpm install
 pnpm deploy:selfhost --yes
 ```
 
 ## Giving teammates access
 
-Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Dashboard edits to that Access policy are overwritten on the next deploy. (If you manage the Access application yourself, edit its Allow policy in Zero Trust instead.)
+Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Dashboard edits to an automatically managed Access policy may be overwritten on the next deploy. If you manage the Access application yourself, edit its Allow policy in Zero Trust instead.
 
-Everyone allowed through Cloudflare Access works in one shared workspace and sees the same projects. Deployments upgraded from older versions (which gave each user a separate workspace) show a one-time dashboard banner — clicking it migrates all previous per-user work into the shared workspace.
+Everyone allowed through Cloudflare Access works in the deployment's shared workspace and sees the same projects.
 
 ## Troubleshooting
 
 - Login fails: re-check `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy.
-- `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status.
-- For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`.
+- Invalid `SEO_DATA_MODE`: use only `first_party` or `full`.
+- `DATAFORSEO_API_KEY` is requested: confirm you did not set `SEO_DATA_MODE=full` unintentionally.
+- `/api/health` reports runtime configuration checks and database status.
+- For server errors, open Worker logs or run `pnpm exec wrangler tail`.
 
 ## Tearing it down
 
@@ -94,7 +111,7 @@ Everyone allowed through Cloudflare Access works in one shared workspace and see
 pnpm alchemy destroy --env-file .env.selfhost --stage selfhost
 ```
 
-This deletes the Worker, the stage-suffixed D1/KV/R2 resources (including your data), and the Access application.
+This deletes the stage resources according to the Alchemy removal policy. Review your Cloudflare resources before destructive teardown in any production environment.
 
 ## Next steps
 

@@ -1,86 +1,78 @@
 # OpenSEO
 
-> Open source alternative to Semrush and Ahrefs
+> SEO intelligence built on your own Google data.
 
-OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
+This fork of OpenSEO defaults to **first-party mode**: Google Search Console, Google Analytics 4, project context, and first-party site-audit data are the evidence layer. The product interprets and prioritizes that evidence instead of requiring users to buy a third-party SEO-data API.
 
-> All-in-one SEO tool for you and your AI agent.
+> Turn Search Console and Analytics into SEO actions.
 
-Connect with any agent like Claude Code, OpenClaw or Hermes. We have pre-built skills, but you can build your own to tailor OpenSEO to your needs.
+OpenSEO still exposes an MCP server and agent skills, so AI agents can work with the same structured evidence used by the application.
 
 <img width="1385" height="794" alt="Image" src="https://github.com/user-attachments/assets/fd208249-44ea-4849-bb4b-5fc896aeab73" />
 
-## Hosted Version
+## Data modes
 
-Try OpenSEO for free on our website. If you want to support the project, a hosted subscription is $10/month.
+The fork has two explicit SEO data modes:
 
-[openseo.so](https://openseo.so)
+- `SEO_DATA_MODE=first_party` — the default. Uses connected GSC, GA4, project context, and first-party site-audit/crawl data. Paid-provider MCP tools and paid rank-tracking schedules are disabled.
+- `SEO_DATA_MODE=full` — optional upstream-compatibility mode. Enables DataForSEO-backed keyword, SERP, backlink, local SEO, competitor, and rank-tracking capabilities and requires `DATAFORSEO_API_KEY`.
 
-## Why use OpenSEO?
+First-party mode does not invent unavailable search volume, keyword difficulty, CPC, backlink counts, competitor rankings, or other third-party metrics.
 
-- Best in class MCP and AI Skills.
-- Modern, simple UI.
-  - Focused workflows instead of a bloated, complex SEO suite.
-- No subscriptions.
-  - Bring your own DataForSEO API key and pay only for what you use.
-- Fork and vibe code your own custom tool.
+## Why use this fork?
 
-## Main SEO Workflows
+- Uses GSC and GA4 as the source of truth for first-party search and business-performance evidence.
+- Preserves OpenSEO's existing GSC + GA4 opportunity intelligence.
+- Includes first-party technical site audits.
+- Exposes first-party evidence through MCP for AI-agent workflows.
+- Does not require DataForSEO or another paid SEO-data provider for the core product.
+- Keeps optional `full` compatibility mode for teams that intentionally want paid-provider features.
 
-- Keyword research
-- Rank tracking
-- Competitor Insights
-- Backlinks
-- Site Audits
-- AI Visibility
+## Core first-party workflows
+
+- Search Console performance analysis
+- URL Inspection
+- Google Analytics reporting
+- GSC + GA4 search opportunities
+- Site audits
+- Project context and saved-keyword workflows
+- Agent explanations and recommendations over available evidence
+
+Paid-provider workflows such as market-wide keyword metrics, external SERP datasets, backlinks, competitor datasets, and paid rank tracking are available only in `full` mode.
 
 ## OpenSEO MCP & Agent Skills
 
-OpenSEO exposes an MCP server so AI agents like Claude Code, OpenClaw, and Hermes can use your SEO data directly. Agent Skills are reusable workflows that guide your agent through SEO tasks using the MCP.
+OpenSEO exposes an MCP server so AI agents can use project SEO evidence directly. In `first_party` mode the MCP server registers only tools backed by allowed first-party sources and local project data.
 
-- [Set up OpenSEO MCP](https://openseo.so/docs/mcp)
-- [Set up OpenSEO Agent Skills](https://openseo.so/docs/skills/setup)
+The agent should explain structured evidence and recommend next actions; it must not fabricate raw metrics that the connected sources do not provide.
 
 ## Self-Hosting
 
 OpenSEO supports two self-hosting paths:
 
-- **Simple: Docker (Best for testing it out)** - For personal use on your own machine. See [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
-  - Unless you already are self-hosting other apps and are confident doing so, we recommend self-hosting with Cloudflare as opposed to Railway, Coolify or Dokploy.
-  - We plan to make it simpler to host on those platforms in the next few months.
-- **Recommended: Cloudflare** - For internet-facing self-hosting across multiple devices or with your team (works on the free plan). See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
+- **Docker** — for local/private use. See [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
+- **Cloudflare** — for internet-facing self-hosting across multiple devices or with a team. See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 
-Either way, you need a DataForSEO API key to get SEO data. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
+Both paths default to:
+
+```env
+SEO_DATA_MODE=first_party
+```
+
+No DataForSEO key is required for first-party mode. Set `SEO_DATA_MODE=full` and configure `DATAFORSEO_API_KEY` only when you intentionally enable paid-provider features.
+
+For useful first-party search intelligence, connect Google Search Console and Google Analytics using the existing Google OAuth integrations. Site-audit functionality can operate independently of those Google connections.
 
 ## Costs
 
-OpenSEO needs a [DataForSEO](https://dataforseo.com/?aff=255379) API key so that you can get SEO data. You pay them directly when self hosting.
+First-party mode does not require a paid SEO-data API. Your hosting platform and any optional AI model provider may still have their own usage or infrastructure costs.
 
-See [openseo.so/pricing](https://openseo.so/pricing)
-
-When you self host, your costs will be slightly lower than the estimates on our website. The way the hosted service makes money is by charging 28% extra for every request we make to DataForSEO.
+If you enable `full` mode, DataForSEO is a separate pay-as-you-go third-party service and its charges apply directly to that usage. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
 
 ## Local Development
 
 See [`docs/LOCAL_DEVELOPMENT.md`](./docs/LOCAL_DEVELOPMENT.md).
 
-## Contributing
+## Upstream
 
-Creating clear issues is the best way to contribute.
-
-Read more here: [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md)
-
-We have this skill: `/simple-issue-description` which helps.
-
-```sh
-npx skills add every-app/open-seo --skill simple-issue-description
-```
-
-## Community
-
-Join Discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
-
-Follow along for updates:
-
-- Follow on X: https://x.com/bensenescu
-- Sign up for the mailing list on our website: [openseo.so](https://openseo.so)
+This project is based on [`every-app/open-seo`](https://github.com/every-app/open-seo) and retains its MIT-licensed foundation. Keeping paid-provider code behind explicit capability gates reduces fork divergence and makes upstream updates easier to integrate.
