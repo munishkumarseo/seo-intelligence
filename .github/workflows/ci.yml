@@ -32,6 +32,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Emit exact Prettier diff
+        run: |
+          pnpm exec prettier --write \
+            04-DECISION-LOG.md \
+            src/server/mcp/server.data-mode.test.ts \
+            src/server/mcp/transport.ts \
+            src/shared/seo-data-mode.ts
+          git diff -- \
+            04-DECISION-LOG.md \
+            src/server/mcp/server.data-mode.test.ts \
+            src/server/mcp/transport.ts \
+            src/shared/seo-data-mode.ts
+          exit 1
+
       - name: Run CI checks
         run: pnpm run ci:check
 
