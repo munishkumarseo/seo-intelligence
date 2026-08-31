@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { FirstPartyActivation } from "@/client/features/onboarding/FirstPartyActivation";
 import { OnboardingAccountMenu } from "@/client/features/onboarding/OnboardingAccountMenu";
 import { PostSignupOnboarding } from "@/client/features/onboarding/PostSignupOnboarding";
 import {
@@ -10,6 +11,7 @@ import {
   onboardingAnswersQueryOptions,
   restoreOnboardingAnswers,
 } from "@/client/features/onboarding/onboardingModel";
+import { productCapabilitiesQueryOptions } from "@/client/features/product/productCapabilitiesQuery";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { useSession } from "@/lib/auth-client";
@@ -30,14 +32,16 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
     const raw = Number(search.step);
     return { step: Number.isFinite(raw) ? clampStep(raw) : 0 };
   },
-  // Send users who already finished onboarding home before rendering. Running
-  // this in beforeLoad (not a component effect) means it can't race with the
-  // navigation we trigger after the final step.
   beforeLoad: async () => {
-    const data = await queryClient.ensureQueryData(
-      onboardingAnswersQueryOptions(),
-    );
-    if (data.completedAt) {
+    const [data, capabilities] = await Promise.all([
+      queryClient.ensureQueryData(onboardingAnswersQueryOptions()),
+      queryClient.ensureQueryData(productCapabilitiesQueryOptions()),
+    ]);
+
+    // Full mode keeps the existing completed-onboarding behavior. First-party
+    // mode still enters activation so a selected GSC property can be enforced
+    // even for accounts that completed the legacy questionnaire previously.
+    if (data.completedAt && capabilities.dataMode === "full") {
       throw redirect({ to: "/", replace: true });
     }
   },
@@ -47,9 +51,22 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
 function OnboardingPage() {
   const { data: session } = useSession();
   const onboardingQuery = useQuery(onboardingAnswersQueryOptions());
+  const capabilitiesQuery = useQuery(productCapabilitiesQueryOptions());
 
-  if (!onboardingQuery.data) {
+  if (!onboardingQuery.data || !capabilitiesQuery.data) {
     return null;
+  }
+
+  const initialAnswers = restoreOnboardingAnswers(onboardingQuery.data.answers);
+
+  if (capabilitiesQuery.data.dataMode === "first_party") {
+    return (
+      <FirstPartyOnboardingFlow
+        onboardingCompleted={Boolean(onboardingQuery.data.completedAt)}
+        initialAnswers={initialAnswers}
+        email={session?.user?.email}
+      />
+    );
   }
 
   const userCreatedAt = onboardingQuery.data.userCreatedAt
@@ -63,8 +80,61 @@ function OnboardingPage() {
     <OnboardingFlow
       firstName={firstName}
       isExistingUser={isExistingUser}
-      initialAnswers={restoreOnboardingAnswers(onboardingQuery.data.answers)}
+      initialAnswers={initialAnswers}
       email={session?.user?.email}
+    />
+  );
+}
+
+function FirstPartyOnboardingFlow({
+  onboardingCompleted,
+  initialAnswers,
+  email,
+}: {
+  onboardingCompleted: boolean;
+  initialAnswers: OnboardingAnswers;
+  email: string | undefined;
+}) {
+  const navigate = useNavigate();
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      saveOnboardingAnswers({
+        data: buildOnboardingPayload(initialAnswers, ONBOARDING_LAST_STEP, {
+          completed: true,
+        }),
+      }),
+    onError: (error) => {
+      console.error("Failed to complete first-party activation", error);
+    },
+  });
+
+  const handleComplete = async (projectId: string) => {
+    if (!onboardingCompleted) {
+      try {
+        await saveMutation.mutateAsync();
+        await queryClient.invalidateQueries({ queryKey: ["onboardingAnswers"] });
+      } catch {
+        // The connection state is already saved by the Google integrations.
+        // Do not strand the user on activation if the profile write fails.
+      }
+    }
+
+    captureClientEvent("onboarding:completed", {
+      data_mode: "first_party",
+    });
+    void navigate({
+      to: "/p/$projectId",
+      params: { projectId },
+      replace: true,
+    });
+  };
+
+  return (
+    <FirstPartyActivation
+      onboardingCompleted={onboardingCompleted}
+      onComplete={(projectId) => void handleComplete(projectId)}
+      isCompleting={saveMutation.isPending}
+      accountMenu={<OnboardingAccountMenu email={email} />}
     />
   );
 }
