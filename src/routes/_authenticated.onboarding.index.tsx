@@ -112,7 +112,9 @@ function FirstPartyOnboardingFlow({
     if (!onboardingCompleted) {
       try {
         await saveMutation.mutateAsync();
-        await queryClient.invalidateQueries({ queryKey: ["onboardingAnswers"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["onboardingAnswers"],
+        });
       } catch {
         // The connection state is already saved by the Google integrations.
         // Do not strand the user on activation if the profile write fails.
