@@ -1,53 +1,26 @@
 import { describe, expect, it } from "vitest";
-
-type PageIdentityModule = {
-  normalizePageKey: (value: string) => string | null;
-};
-
-function isPageIdentityModule(value: unknown): value is PageIdentityModule {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "normalizePageKey" in value &&
-    typeof value.normalizePageKey === "function"
-  );
-}
-
-async function loadPageIdentity(): Promise<PageIdentityModule> {
-  const modulePath = ["./page", "Identity"].join("");
-  const loaded = (await import(modulePath)) as unknown;
-
-  if (!isPageIdentityModule(loaded)) {
-    throw new Error("pageIdentity module does not expose normalizePageKey");
-  }
-
-  return loaded;
-}
+import { normalizePageKey } from "./pageIdentity";
 
 describe("normalizePageKey", () => {
-  it("normalizes host casing and trailing slashes", async () => {
-    const { normalizePageKey } = await loadPageIdentity();
+  it("normalizes host casing and trailing slashes", () => {
     expect(normalizePageKey("https://Example.com/foo/")).toBe(
       "example.com/foo",
     );
   });
 
-  it("drops default ports", async () => {
-    const { normalizePageKey } = await loadPageIdentity();
+  it("drops default ports", () => {
     expect(normalizePageKey("http://example.com:80/foo")).toBe(
       "example.com/foo",
     );
   });
 
-  it("keeps non-default ports", async () => {
-    const { normalizePageKey } = await loadPageIdentity();
+  it("keeps non-default ports", () => {
     expect(normalizePageKey("https://example.com:8443/foo/")).toBe(
       "example.com:8443/foo",
     );
   });
 
-  it("rejects unavailable page values", async () => {
-    const { normalizePageKey } = await loadPageIdentity();
+  it("rejects unavailable page values", () => {
     expect(normalizePageKey("(not set)")).toBeNull();
   });
 });
