@@ -41,6 +41,8 @@ type Candidate = {
   } | null;
 };
 
+const SEARCH_CONSOLE_TIME_ZONE = "America/Los_Angeles";
+
 function resolveCombinedDates(
   input: Pick<SearchOpportunityInput, "startDate" | "endDate">,
   propertyTimeZone: string,
@@ -112,18 +114,12 @@ async function getOpportunities(
     Ga4ConnectionRepository.getByProjectId(input.projectId),
     GscService.getConnection(input.projectId),
   ]);
-  if (!ga4Connection) {
-    throw new Ga4ReportError(
-      "ga4_not_connected",
-      "Google Analytics is not connected for this project.",
-    );
-  }
   if (!gscConnection) throw new GscNotConnectedError(input.projectId);
 
   const now = opts.now ?? new Date();
   const dates = resolveCombinedDates(
     input,
-    ga4Connection.propertyTimeZone,
+    ga4Connection?.propertyTimeZone ?? SEARCH_CONSOLE_TIME_ZONE,
     now,
   );
   const gsc = await GscService.getPerformance({
@@ -136,19 +132,21 @@ async function getOpportunities(
     type: "web",
     dataState: "final",
   });
-  const ga4 = await Ga4ReportingService.runReport({
-    projectId: input.projectId,
-    kind: "landing_pages",
-    startDate: dates.startDate,
-    endDate: dates.endDate,
-    limit: 1_000,
-    offset: 0,
-    channel: "organic_search",
-  });
+  const ga4 = ga4Connection
+    ? await Ga4ReportingService.runReport({
+        projectId: input.projectId,
+        kind: "landing_pages",
+        startDate: dates.startDate,
+        endDate: dates.endDate,
+        limit: 1_000,
+        offset: 0,
+        channel: "organic_search",
+      })
+    : null;
 
   const ga4ByPage = new Map<string, Record<string, string | number | null>>();
   let invalidGa4Rows = 0;
-  for (const row of ga4.rows) {
+  for (const row of ga4?.rows ?? []) {
     const host = typeof row.hostName === "string" ? row.hostName : "";
     const landing = typeof row.landingPage === "string" ? row.landingPage : "";
     const key = normalizePageKey(`${host}${landing}`);
@@ -247,14 +245,14 @@ async function getOpportunities(
     status: "ok" as const,
     source: {
       searchConsoleSiteUrl: gsc.siteUrl,
-      googleAnalyticsPropertyId: ga4.source.propertyId,
-      googleAnalyticsPropertyDisplayName: ga4.source.propertyDisplayName,
+      googleAnalyticsPropertyId: ga4?.source.propertyId ?? null,
+      googleAnalyticsPropertyDisplayName: ga4?.source.propertyDisplayName ?? null,
     },
     request: {
       dateRange: dates,
       limit,
-      searchConsoleTimeZone: "America/Los_Angeles",
-      googleAnalyticsTimeZone: ga4.request.propertyTimeZone,
+      searchConsoleTimeZone: SEARCH_CONSOLE_TIME_ZONE,
+      googleAnalyticsTimeZone: ga4?.request.propertyTimeZone ?? null,
     },
     rowCount: returned.length,
     totalCandidateRows: candidates.length,
@@ -266,11 +264,11 @@ async function getOpportunities(
         ? "engagementRate"
         : "sessionKeyEventRate",
       engagementFallback,
-      scoreDataLimited: ga4.reportMetadata.hasLimitedData,
+      scoreDataLimited: ga4?.reportMetadata.hasLimitedData ?? false,
     },
     coverage: {
       gscRowsConsidered: gsc.rows.length,
-      ga4RowsConsidered: ga4.rows.length,
+      ga4RowsConsidered: ga4?.rows.length ?? 0,
       matchedRows,
       unmatchedGscRows,
       unmatchedGa4Rows:
@@ -278,15 +276,16 @@ async function getOpportunities(
     },
     truncated: {
       gsc: gsc.rows.length >= 1_000,
-      ga4: ga4.totalRowCount > ga4.rows.length,
+      ga4: ga4 ? ga4.totalRowCount > ga4.rows.length : false,
       candidates: returned.length < candidates.length,
     },
-    warnings:
-      ga4.request.propertyTimeZone === "America/Los_Angeles"
+    warnings: ga4
+      ? ga4.request.propertyTimeZone === SEARCH_CONSOLE_TIME_ZONE
         ? ga4.warnings
-        : [...ga4.warnings, "source_time_zones_differ"],
-    reportMetadata: ga4.reportMetadata,
-    quota: ga4.quota,
+        : [...ga4.warnings, "source_time_zones_differ"]
+      : ["ga4_not_connected"],
+    reportMetadata: ga4?.reportMetadata ?? null,
+    quota: ga4?.quota ?? null,
   };
 }
 
