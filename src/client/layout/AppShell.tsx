@@ -8,6 +8,7 @@ import {
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
 import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
+import { productCapabilitiesQueryOptions } from "@/client/features/product/productCapabilitiesQuery";
 import { Sidebar } from "@/client/components/Sidebar";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
@@ -56,7 +57,12 @@ export function AuthenticatedAppLayout({
   // builds links that self-correct via the route guard once data arrives.
   const sidebarProjectId =
     projectId ?? fallbackProjectId ?? rememberedProjectId;
-  const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
+
+  const capabilitiesQuery = useQuery(productCapabilitiesQueryOptions());
+  const shouldLoadPaidSetup =
+    capabilitiesQuery.data?.features.dataForSeoSetup === true;
+  const shouldCheckSeoApiKeyStatus =
+    shouldLoadPaidSetup && location.pathname !== BILLING_ROUTE;
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],
     queryFn: () => getSeoApiKeyStatus(),
@@ -90,9 +96,12 @@ export function AuthenticatedAppLayout({
   ]);
 
   const shouldShowMissingSeoApiKeyModal =
-    showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
+    shouldLoadPaidSetup &&
+    showMissingSeoApiKeyModal &&
+    location.pathname !== DATAFORSEO_HELP_PATH;
 
   const shouldShowSeoApiWarning =
+    shouldLoadPaidSetup &&
     !seoApiKeyStatusError &&
     isSeoApiKeyConfigured === false &&
     !shouldShowMissingSeoApiKeyModal;
@@ -130,10 +139,12 @@ export function AuthenticatedAppLayout({
             thin strip of the sidebar background above it and a hairline border. */}
         <div className="flex min-h-0 flex-1 flex-col md:pt-2">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-base-100 md:rounded-tl-lg md:border-l md:border-t md:border-base-300">
-            <SeoApiStatusBanners
-              shouldShowSeoApiWarning={shouldShowSeoApiWarning}
-              seoApiKeyStatusError={seoApiKeyStatusError}
-            />
+            {shouldLoadPaidSetup ? (
+              <SeoApiStatusBanners
+                shouldShowSeoApiWarning={shouldShowSeoApiWarning}
+                seoApiKeyStatusError={seoApiKeyStatusError}
+              />
+            ) : null}
 
             {banner}
 
@@ -148,11 +159,13 @@ export function AuthenticatedAppLayout({
         onClose={() => setDrawerOpen(false)}
       />
 
-      <MissingSeoSetupModal
-        ref={setupModalRef}
-        isOpen={shouldShowMissingSeoApiKeyModal}
-        onClose={() => setShowMissingSeoApiKeyModal(false)}
-      />
+      {shouldLoadPaidSetup ? (
+        <MissingSeoSetupModal
+          ref={setupModalRef}
+          isOpen={shouldShowMissingSeoApiKeyModal}
+          onClose={() => setShowMissingSeoApiKeyModal(false)}
+        />
+      ) : null}
 
       <GscReEngagementModal
         projectId={sidebarProjectId}
