@@ -1,4 +1,5 @@
 import { GscService } from "@/server/features/gsc/services/GscService";
+import { normalizePageKey } from "@/server/features/seo/pageIdentity";
 import { GscNotConnectedError } from "@/server/lib/gscErrors";
 import {
   Ga4ReportingService,
@@ -54,26 +55,6 @@ function resolveCombinedDates(
     };
   }
   return resolveGa4DateRange(input, propertyTimeZone, now).resolvedDateRange;
-}
-
-function normalizePageKey(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === "(not set)") return null;
-  try {
-    const url = new URL(
-      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
-    );
-    let host = url.hostname.toLowerCase();
-    const defaultPort =
-      (url.protocol === "http:" && url.port === "80") ||
-      (url.protocol === "https:" && url.port === "443");
-    if (url.port && !defaultPort) host += `:${url.port}`;
-    let path = url.pathname || "/";
-    if (path.length > 1) path = path.replace(/\/+$/, "");
-    return `${host}${path}`;
-  } catch {
-    return null;
-  }
 }
 
 function numberField(
