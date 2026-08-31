@@ -4,20 +4,24 @@ type PageIdentityModule = {
   normalizePageKey: (value: string) => string | null;
 };
 
+function isPageIdentityModule(value: unknown): value is PageIdentityModule {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "normalizePageKey" in value &&
+    typeof value.normalizePageKey === "function"
+  );
+}
+
 async function loadPageIdentity(): Promise<PageIdentityModule> {
   const modulePath = ["./page", "Identity"].join("");
   const loaded = (await import(modulePath)) as unknown;
 
-  if (
-    typeof loaded !== "object" ||
-    loaded === null ||
-    !("normalizePageKey" in loaded) ||
-    typeof loaded.normalizePageKey !== "function"
-  ) {
+  if (!isPageIdentityModule(loaded)) {
     throw new Error("pageIdentity module does not expose normalizePageKey");
   }
 
-  return loaded as PageIdentityModule;
+  return loaded;
 }
 
 describe("normalizePageKey", () => {
