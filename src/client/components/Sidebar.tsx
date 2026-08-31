@@ -198,7 +198,9 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
                 const { icon, label, ...linkProps } = item;
                 return (
                   <SidebarNavLink
-                    key={("href" in linkProps && linkProps.href) || linkProps.to}
+                    key={
+                      ("href" in linkProps && linkProps.href) || linkProps.to
+                    }
                     icon={icon}
                     label={label}
                     onNavigate={onNavigate}
