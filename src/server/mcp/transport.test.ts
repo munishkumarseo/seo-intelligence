@@ -31,8 +31,11 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/server/mcp/server", () => ({
-  createOpenSeoMcpServer: (props?: unknown) => {
-    selfHostedAuthMocks.createOpenSeoMcpServer(props);
+  createOpenSeoMcpServer: (
+    props?: unknown,
+    options?: { seoDataMode: "first_party" | "full" },
+  ) => {
+    selfHostedAuthMocks.createOpenSeoMcpServer(props, options);
     return new McpServer({
       name: "OpenSEO MCP",
       title: "OpenSEO",
@@ -143,14 +146,17 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("connection")).not.toBe("keep-alive");
     expect(selfHostedAuthMocks.resolveLocalNoAuthContext).toHaveBeenCalled();
-    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
-      [MCP_AUTH_CONTEXT_PROP]: {
-        userId: "local-admin",
-        userEmail: "admin@localhost",
-        organizationId: "delegated-local-admin",
-        baseUrl: "https://open-seo.test",
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
+      {
+        [MCP_AUTH_CONTEXT_PROP]: {
+          userId: "local-admin",
+          userEmail: "admin@localhost",
+          organizationId: "delegated-local-admin",
+          baseUrl: "https://open-seo.test",
+        },
       },
-    });
+      { seoDataMode: "first_party" },
+    );
     // Self-hosted must not pin Origins to the request's own Host — the
     // handler's localhost-class default is the rebinding-safe choice.
     expect(selfHostedAuthMocks.createMcpHandler).toHaveBeenCalledWith(
@@ -158,6 +164,21 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
         allowedOriginHostnames: undefined,
         legacy: "reject",
       }),
+    );
+  });
+
+  it("passes full SEO data mode to the MCP server", async () => {
+    const response = await handleSelfHostedOpenSeoMcpRequest(
+      createMcpRequest(),
+      "local_noauth",
+      { SEO_DATA_MODE: "full" },
+      ctx,
+    );
+
+    expect(response.status).toBe(200);
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
+      expect.any(Object),
+      { seoDataMode: "full" },
     );
   });
 
@@ -173,14 +194,17 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     expect(
       selfHostedAuthMocks.resolveCloudflareAccessContext,
     ).toHaveBeenCalledWith(expect.any(Headers));
-    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
-      [MCP_AUTH_CONTEXT_PROP]: {
-        userId: "cloudflare-user",
-        userEmail: "person@example.com",
-        organizationId: "delegated-cloudflare-user",
-        baseUrl: "https://open-seo.test",
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
+      {
+        [MCP_AUTH_CONTEXT_PROP]: {
+          userId: "cloudflare-user",
+          userEmail: "person@example.com",
+          organizationId: "delegated-cloudflare-user",
+          baseUrl: "https://open-seo.test",
+        },
       },
-    });
+      { seoDataMode: "first_party" },
+    );
   });
 
   it("answers OPTIONS preflight without resolving an auth context", async () => {
@@ -225,6 +249,7 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     );
     expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
       props,
+      { seoDataMode: "first_party" },
     );
   });
 
@@ -290,6 +315,7 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     expect(response.status).toBe(200);
     expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
       props,
+      { seoDataMode: "first_party" },
     );
   });
 
