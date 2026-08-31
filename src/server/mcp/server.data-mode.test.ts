@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { McpProps } from "@/server/mcp/context";
 
 const mocks = vi.hoisted(() => ({
   registered: [] as string[],
@@ -148,7 +149,14 @@ vi.mock("@/server/mcp/tools/whoami", () => ({
 
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
 
-const authProps = {} as never;
+const authProps: McpProps = {
+  openSeoAuth: {
+    userId: "user-1",
+    userEmail: "user@example.com",
+    organizationId: "org-1",
+    baseUrl: "https://open-seo.test",
+  },
+};
 
 beforeEach(() => {
   mocks.registered.length = 0;
