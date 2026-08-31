@@ -73,32 +73,42 @@ const projectNavItems = [
 const firstPartyProjectNavItems = [
   {
     to: "/p/$projectId" as const,
+    hrefTemplate: null,
     label: "Overview",
     icon: LayoutDashboard,
     activeOptions: { exact: true, includeSearch: false },
   },
   {
-    to: "/p/$projectId/search-opportunities" as const,
+    // This becomes a typed router link as soon as Task 5 adds the route file.
+    // Until then, keep the destination explicit without widening router types.
+    to: "/p/$projectId" as const,
+    hrefTemplate: "/p/$projectId/search-opportunities",
     label: "Search Opportunities",
     icon: TrendingUp,
   },
   {
     to: "/p/$projectId/search-performance" as const,
+    hrefTemplate: null,
     label: "Search Console",
     icon: GoogleGlyphMuted,
   },
   {
-    to: "/p/$projectId/analytics" as const,
+    // The Analytics route is added later in the plan; use an ordinary href for
+    // this intermediate checkpoint rather than asserting an unregistered route.
+    to: "/p/$projectId" as const,
+    hrefTemplate: "/p/$projectId/analytics",
     label: "Analytics",
     icon: Globe,
   },
   {
     to: "/p/$projectId/audit" as const,
+    hrefTemplate: null,
     label: "Site Audit",
     icon: ClipboardCheck,
   },
   {
     to: "/p/$projectId/sam" as const,
+    hrefTemplate: null,
     label: "Ask SEO",
     icon: Bot,
   },
@@ -130,6 +140,7 @@ function getProjectNavItems(projectId: string) {
 function getFirstPartyProjectNavItems(projectId: string) {
   return firstPartyProjectNavItems.map((item) => ({
     ...item,
+    href: item.hrefTemplate?.replace("$projectId", projectId) ?? null,
     params: { projectId },
     search: {},
   }));
