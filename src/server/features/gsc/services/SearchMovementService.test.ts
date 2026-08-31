@@ -43,15 +43,11 @@ type MovementInput = {
 
 type SearchMovementModule = {
   SearchMovementService: {
-    getPageMovements: (
-      input: MovementInput,
-    ) => Promise<{
+    getPageMovements: (input: MovementInput) => Promise<{
       rows: MovementRow[];
       previousTruncated: boolean;
     }>;
-    getPageQueries: (
-      input: MovementInput & { page: string },
-    ) => Promise<{
+    getPageQueries: (input: MovementInput & { page: string }) => Promise<{
       rows: QueryMovementRow[];
       previousTruncated: boolean;
     }>;
@@ -72,7 +68,9 @@ function isSearchMovementModule(value: unknown): value is SearchMovementModule {
   );
 }
 
-async function loadService(): Promise<SearchMovementModule["SearchMovementService"]> {
+async function loadService(): Promise<
+  SearchMovementModule["SearchMovementService"]
+> {
   const modulePath = ["./SearchMovement", "Service"].join("");
   const loaded = (await import(modulePath)) as unknown;
   if (!isSearchMovementModule(loaded)) {
@@ -81,12 +79,7 @@ async function loadService(): Promise<SearchMovementModule["SearchMovementServic
   return loaded.SearchMovementService;
 }
 
-function gscRow(
-  key: string,
-  position: number,
-  impressions = 100,
-  clicks = 10,
-) {
+function gscRow(key: string, position: number, impressions = 100, clicks = 10) {
   return {
     keys: [key],
     clicks,
@@ -150,7 +143,9 @@ describe("SearchMovementService", () => {
       country: "usa",
     });
 
-    const byPage = new Map(response.rows.map((row) => [row.normalizedPage, row]));
+    const byPage = new Map(
+      response.rows.map((row) => [row.normalizedPage, row]),
+    );
     expect(byPage.get("example.com/improved")).toMatchObject({
       averagePosition: 6.8,
       previousAveragePosition: 11.4,
@@ -210,7 +205,9 @@ describe("SearchMovementService", () => {
       gscRow(`https://example.com/previous-${index}`, 10),
     );
     mocks.getPerformance
-      .mockResolvedValueOnce(result([gscRow("https://example.com/candidate", 12)]))
+      .mockResolvedValueOnce(
+        result([gscRow("https://example.com/candidate", 12)]),
+      )
       .mockResolvedValueOnce(result(previousRows));
 
     const service = await loadService();
