@@ -1,8 +1,31 @@
 import { describe, expect, it } from "vitest";
 
-async function loadProductCapabilities() {
+type DataMode = "first_party" | "full";
+
+type ProductCapabilitiesModule = {
+  getProductCapabilitiesForMode: (dataMode: DataMode) => {
+    dataMode: DataMode;
+    features: {
+      gsc: boolean;
+      ga4: boolean;
+      siteAudit: boolean;
+      searchOpportunities: boolean;
+      askSeo: boolean;
+      keywordResearch: boolean;
+      savedKeywords: boolean;
+      rankTracking: boolean;
+      domainResearch: boolean;
+      backlinks: boolean;
+      brandLookup: boolean;
+      promptExplorer: boolean;
+      dataForSeoSetup: boolean;
+    };
+  };
+};
+
+async function loadProductCapabilities(): Promise<ProductCapabilitiesModule> {
   const modulePath = ["@/shared", "product-capabilities"].join("/");
-  return import(modulePath);
+  return (await import(modulePath)) as ProductCapabilitiesModule;
 }
 
 describe("getProductCapabilitiesForMode", () => {
