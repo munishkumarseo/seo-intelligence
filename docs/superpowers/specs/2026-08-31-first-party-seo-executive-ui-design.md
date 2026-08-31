@@ -39,6 +39,7 @@ Ask SEO
 6. **Neutral product styling.** Use a shadcn-like charcoal/graphite/gray/off-white visual system with subtle borders and restrained charts.
 7. **No hidden paid-provider execution.** Disabled features must not generate background DataForSEO requests.
 8. **GSC is the activation gate.** GA4 enhances the product but does not unlock it.
+9. **Unknown is not zero.** Missing, unjoined, or unavailable source data is displayed as unavailable, not converted into a fabricated numeric zero.
 
 ## 3. Product modes and capabilities
 
@@ -72,7 +73,7 @@ The capability object is the single source of truth for:
 - setup banners/modals;
 - paid-provider background requests.
 
-`full` mode should remain compatible with existing paid-provider functionality where practical.
+In `full` mode, the existing paid-provider capabilities and routes remain enabled. The first-party route restrictions in this specification apply only to `first_party` mode.
 
 ## 4. First-party navigation
 
@@ -288,6 +289,8 @@ GA4-connected optional columns:
 - Key Events
 - Revenue
 
+If GA4 is connected but a specific GSC URL cannot be joined to a GA4 landing page, show the GA4 cells as unavailable (`—` or equivalent), not `0`. A numeric zero is shown only when GA4 actually reports zero for that metric.
+
 ### 9.2 Date comparison
 
 Default:
@@ -321,7 +324,13 @@ A lower GSC average-position number is better.
 
 Important product wording: this is **GSC average-position movement**, not a dedicated daily rank tracker. Page-level movement can be affected by query mix, device, country, and impression distribution. The query drill-down exists to explain the page-level signal.
 
-### 9.4 Meaningful movement
+### 9.4 Page and query identity
+
+Reuse OpenSEO's existing first-party page normalization/join behavior where available, especially the normalization already used by `SearchOpportunityService`. Do not introduce a second incompatible URL normalization scheme for Search Opportunities.
+
+Current and comparison-period GSC rows must use the same normalized identity rules before movement classification.
+
+### 9.5 Meaningful movement
 
 V1 uses a transparent **1.0-position absolute-change threshold** for Ranking Improved and Ranking Dropped:
 
@@ -331,7 +340,7 @@ V1 uses a transparent **1.0-position absolute-change threshold** for Ranking Imp
 
 This threshold is only noise control. It is not an SEO score and is not shown as a proprietary ranking model.
 
-### 9.5 Ranking Improved
+### 9.6 Ranking Improved
 
 Definition:
 
@@ -342,7 +351,7 @@ Default sorting:
 1. Position Change descending;
 2. current-period Impressions descending.
 
-### 9.6 Ranking Dropped
+### 9.7 Ranking Dropped
 
 Definition:
 
@@ -355,7 +364,7 @@ Default sorting:
 
 This keeps the rule transparent. The UI may explain that a visible page dropping from 4 → 9 deserves attention, but V1 does not invent or expose a custom risk score.
 
-### 9.7 Newly Ranking
+### 9.8 Newly Ranking
 
 Definition:
 
@@ -373,7 +382,7 @@ Default sort: current-period Impressions descending.
 
 Do not claim this is the page's exact first ranking date. If the underlying result set is truncated such that previous-period absence cannot be trusted, omit the Newly Ranking classification rather than guess.
 
-### 9.8 Pages to Improve
+### 9.9 Pages to Improve
 
 GSC-only candidates use transparent first-party rules:
 
@@ -384,7 +393,7 @@ Default sort in GSC-only mode: current-period Impressions descending.
 
 When GA4 is connected, reuse the existing `SearchOpportunityService` to enrich prioritization. Its production formula remains unchanged and is not duplicated in the client.
 
-### 9.9 Filters
+### 9.10 Filters
 
 Keep V1 filters limited:
 
@@ -401,7 +410,7 @@ Sortable columns:
 - Clicks
 - CTR
 
-### 9.10 URL detail drawer
+### 9.11 URL detail drawer
 
 Clicking a URL opens a right-side drawer so users keep their current table/filter context.
 
@@ -488,6 +497,8 @@ Columns:
 - Revenue
 
 Landing-page rows should link into the corresponding Search Opportunity URL context when practical.
+
+If GA4 does not provide a metric for the selected property/report, hide the optional column or show it as unavailable. Do not substitute zero for missing data.
 
 ### 11.4 Explicit non-goals
 
@@ -645,7 +656,7 @@ Verify in `first_party` mode:
 - Ask SEO enabled;
 - paid-provider capabilities disabled.
 
-Verify `full` mode remains compatible with existing paid-provider capability where practical.
+Verify `full` mode keeps the existing paid-provider capabilities enabled.
 
 ### 16.2 Navigation
 
@@ -680,12 +691,13 @@ Test:
 - changes below 1.0 absolute positions are treated as stable for movement tabs;
 - missing previous-period data;
 - Newly Ranking behavior, including safe handling when previous-period absence is unreliable because of truncation;
+- consistent normalized page identity across both periods;
 - URL-to-query drill-down;
 - 7-day, 28-day, and 3-month comparisons.
 
 ### 16.7 GA4 optionality
 
-Verify GSC-only pages render correctly with no GA4 columns or blocking errors, and GA4 enrichment appears when connected.
+Verify GSC-only pages render correctly with no GA4 columns or blocking errors, GA4 enrichment appears when connected, and missing joins remain unavailable rather than becoming zero.
 
 ### 16.8 Agent boundaries
 
