@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CI checks
-        run: pnpm run ci:check
+      - name: Diagnose movement test formatting
+        run: |
+          pnpm exec prettier --write src/server/features/gsc/services/SearchMovementService.test.ts
+          git diff -- src/server/features/gsc/services/SearchMovementService.test.ts
+          exit 1
 
       - name: Run tests
         run: pnpm run test:ci
