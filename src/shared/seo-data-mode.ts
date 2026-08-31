@@ -2,9 +2,7 @@ export const SEO_DATA_MODES = ["first_party", "full"] as const;
 
 export type SeoDataMode = (typeof SEO_DATA_MODES)[number];
 
-export function resolveSeoDataMode(
-  value: string | undefined,
-): SeoDataMode {
+export function resolveSeoDataMode(value: string | undefined): SeoDataMode {
   const normalized = value?.trim();
 
   if (!normalized || normalized === "first_party") {
