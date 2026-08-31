@@ -28,8 +28,11 @@ vi.mock("@/server/mcp/output-schemas", () => ({
   objectSchema: (value: unknown) => value ?? {},
 }));
 vi.mock("@/server/mcp/instrumentation", () => ({
-  instrumentMcpToolHandler: (_name: string, _schema: unknown, handler: unknown) =>
-    handler,
+  instrumentMcpToolHandler: (
+    _name: string,
+    _schema: unknown,
+    handler: unknown,
+  ) => handler,
 }));
 
 vi.mock("@/server/mcp/tools/get-backlinks-overview", () => ({
@@ -72,7 +75,9 @@ vi.mock("@/server/mcp/tools/google-analytics-tools", () => ({
   getGoogleAnalyticsEcommercePerformanceTool: mocks.tool(
     "get_google_analytics_ecommerce_performance",
   ),
-  getGoogleAnalyticsKeyEventsTool: mocks.tool("get_google_analytics_key_events"),
+  getGoogleAnalyticsKeyEventsTool: mocks.tool(
+    "get_google_analytics_key_events",
+  ),
   getGoogleAnalyticsMeasurementHealthTool: mocks.tool(
     "get_google_analytics_measurement_health",
   ),
@@ -85,7 +90,9 @@ vi.mock("@/server/mcp/tools/google-analytics-tools", () => ({
   getGoogleAnalyticsPagePerformanceTool: mocks.tool(
     "get_google_analytics_page_performance",
   ),
-  getGoogleAnalyticsSiteSearchTool: mocks.tool("get_google_analytics_site_search"),
+  getGoogleAnalyticsSiteSearchTool: mocks.tool(
+    "get_google_analytics_site_search",
+  ),
   getGoogleAnalyticsTrafficAcquisitionTool: mocks.tool(
     "get_google_analytics_traffic_acquisition",
   ),
