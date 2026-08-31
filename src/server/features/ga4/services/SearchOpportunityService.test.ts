@@ -174,7 +174,7 @@ describe("SearchOpportunityService", () => {
 
   it("uses engagement rate when all joined rows have zero key events", async () => {
     mocks.getPerformance.mockResolvedValue({
-      siteUrl: "https://example.com/other",
+      siteUrl: "https://example.com/",
       request: {},
       rows: [
         {
