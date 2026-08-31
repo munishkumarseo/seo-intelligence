@@ -6,6 +6,8 @@ This file prevents AI from confusing design, code presence, and verified complet
 
 First-party backend enforcement implementation on branch `feat/first-party-backend` / PR #1.
 
+GitHub Actions has now been enabled for the fork. A fresh branch update is being used to trigger pull-request CI; verification remains pending until those checks produce evidence.
+
 ## Approved Architecture
 
 - use OpenSEO as the base and existing backend;
