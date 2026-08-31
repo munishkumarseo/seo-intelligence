@@ -23,9 +23,21 @@ type ProductCapabilitiesModule = {
   };
 };
 
+function isProductCapabilitiesModule(
+  value: unknown,
+): value is ProductCapabilitiesModule {
+  if (typeof value !== "object" || value === null) return false;
+  if (!("getProductCapabilitiesForMode" in value)) return false;
+  return typeof value.getProductCapabilitiesForMode === "function";
+}
+
 async function loadProductCapabilities(): Promise<ProductCapabilitiesModule> {
   const modulePath = ["@/shared", "product-capabilities"].join("/");
-  return (await import(modulePath)) as ProductCapabilitiesModule;
+  const loaded: unknown = await import(modulePath);
+  if (!isProductCapabilitiesModule(loaded)) {
+    throw new Error("Invalid product capabilities module");
+  }
+  return loaded;
 }
 
 describe("getProductCapabilitiesForMode", () => {
