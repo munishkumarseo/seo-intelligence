@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CI checks
-        run: pnpm run ci:check
+      - name: Diagnose opportunity service formatting
+        run: |
+          pnpm exec prettier --write src/server/features/ga4/services/SearchOpportunityService.ts
+          git diff -- src/server/features/ga4/services/SearchOpportunityService.ts
+          exit 1
 
       - name: Run tests
         run: pnpm run test:ci
