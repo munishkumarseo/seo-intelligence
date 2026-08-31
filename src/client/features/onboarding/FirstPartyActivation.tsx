@@ -83,8 +83,8 @@ export function FirstPartyActivation({
           </div>
           <SearchConsoleConnectionCard projectId={projectId} />
           <p className="text-xs leading-relaxed text-base-content/50">
-            Select a verified property to continue. We use Google&apos;s own data
-            as the source of truth.
+            Select a verified property to continue. We use Google&apos;s own
+            data as the source of truth.
           </p>
         </div>
       </ActivationFrame>
