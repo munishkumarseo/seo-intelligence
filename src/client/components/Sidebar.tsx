@@ -55,13 +55,24 @@ function SidebarNavLink({
   icon: ComponentType<{ className?: string }>;
   label: string;
   onNavigate?: () => void;
-  linkProps: LinkOptions;
+  linkProps: LinkOptions & { href?: string };
 }) {
+  const { href, ...routerLinkProps } = linkProps;
+
+  if (href) {
+    return (
+      <a href={href} onClick={onNavigate} className={navItemClass}>
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </a>
+    );
+  }
+
   return (
     <Link
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
-      {...linkProps}
+      {...routerLinkProps}
       className={navItemClass}
       activeProps={navItemActiveProps}
     >
@@ -187,7 +198,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
                 const { icon, label, ...linkProps } = item;
                 return (
                   <SidebarNavLink
-                    key={linkProps.to}
+                    key={("href" in linkProps && linkProps.href) || linkProps.to}
                     icon={icon}
                     label={label}
                     onNavigate={onNavigate}
