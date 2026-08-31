@@ -185,11 +185,10 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
     return withMcpCors(new Response("Invalid Origin", { status: 403 }));
   }
 
-  return createRequestHandler(
-    result.data,
-    seoDataModeFromEnv(env),
-    [hostedUrl.hostname, SURFMIND_CHROME_EXTENSION_HOSTNAME],
-  )(request, env, ctx);
+  return createRequestHandler(result.data, seoDataModeFromEnv(env), [
+    hostedUrl.hostname,
+    SURFMIND_CHROME_EXTENSION_HOSTNAME,
+  ])(request, env, ctx);
 }
 
 export async function handleSelfHostedOpenSeoMcpRequest(
@@ -214,5 +213,9 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     baseUrl: getPublicOrigin(request),
   });
 
-  return createRequestHandler(props, seoDataModeFromEnv(env))(request, env, ctx);
+  return createRequestHandler(props, seoDataModeFromEnv(env))(
+    request,
+    env,
+    ctx,
+  );
 }
