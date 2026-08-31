@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getProductCapabilitiesForMode } from "@/shared/product-capabilities";
+
+async function loadProductCapabilities() {
+  const modulePath = ["@/shared", "product-capabilities"].join("/");
+  return import(modulePath);
+}
 
 describe("getProductCapabilitiesForMode", () => {
-  it("exposes only first-party product features in first_party mode", () => {
+  it("exposes only first-party product features in first_party mode", async () => {
+    const { getProductCapabilitiesForMode } = await loadProductCapabilities();
     const result = getProductCapabilitiesForMode("first_party");
 
     expect(result.dataMode).toBe("first_party");
@@ -23,7 +28,8 @@ describe("getProductCapabilitiesForMode", () => {
     });
   });
 
-  it("keeps paid-provider features enabled in full mode", () => {
+  it("keeps paid-provider features enabled in full mode", async () => {
+    const { getProductCapabilitiesForMode } = await loadProductCapabilities();
     const result = getProductCapabilitiesForMode("full");
 
     expect(result.dataMode).toBe("full");
