@@ -218,7 +218,9 @@ Show:
 
 ### 8.2 Pages to Improve card
 
-Use simple first-party criteria: pages already visible in Google, roughly positions 4–20, with useful impressions. When GA4 is connected, the existing SearchOpportunityService may enrich ordering with business value.
+In GSC-only mode, candidates are pages with current average position from **4.0 through 20.0 inclusive** and at least one current-period impression. Sort candidates by current-period impressions descending so pages with more observed search visibility appear first.
+
+When GA4 is connected, the existing `SearchOpportunityService` may enrich prioritization with business value. Its production scoring logic remains unchanged.
 
 UI explanation:
 
@@ -228,11 +230,13 @@ Do not expose “striking distance,” percentile demand, reachability, or inter
 
 ### 8.3 Ranking Improved card
 
-Show URLs whose average position improved meaningfully versus the comparison period.
+Show URLs whose average position improved by at least **1.0 position** versus the comparison period. Within the section, sort by position improvement descending, then current-period impressions descending.
 
 ### 8.4 Newly Ranking card
 
-Show pages that have current-period GSC visibility but little or no comparable visibility in the previous period. Treat this as a visibility signal, not proof of a precise first ranking date.
+Show pages with current-period GSC impressions greater than zero and no previous-period impressions for the same normalized page key under identical dimensions and filters.
+
+Treat this as a visibility signal, not proof of a precise first ranking date. If result truncation or retrieval limits prevent a reliable previous-period comparison, do not apply the Newly Ranking label.
 
 ### 8.5 Performance snapshots
 
@@ -296,7 +300,7 @@ Available ranges:
 - 28 days
 - 3 months
 
-Each range compares with the immediately preceding equivalent period.
+Each range compares with the immediately preceding equivalent period using identical dimensions and filters.
 
 ### 9.3 Position-change calculation
 
@@ -319,29 +323,43 @@ Important product wording: this is **GSC average-position movement**, not a dedi
 
 ### 9.4 Meaningful movement
 
-Do not promote tiny changes such as 8.1 → 8.0 as major opportunities. The implementation plan should define a small, testable noise threshold using existing project patterns, without creating a proprietary SEO score.
+V1 uses a transparent **1.0-position absolute-change threshold** for Ranking Improved and Ranking Dropped:
+
+- `positionChange >= +1.0` → Ranking Improved;
+- `positionChange <= -1.0` → Ranking Dropped;
+- `-1.0 < positionChange < +1.0` → treated as stable and omitted from those two movement tabs.
+
+This threshold is only noise control. It is not an SEO score and is not shown as a proprietary ranking model.
 
 ### 9.5 Ranking Improved
 
 Definition:
 
-> Pages whose GSC average position improved meaningfully versus the previous period.
+> Pages whose GSC average position improved by at least 1.0 position versus the previous period.
 
-Default sorting favors meaningful improvement with useful visibility rather than pure numeric change alone.
+Default sorting:
+
+1. Position Change descending;
+2. current-period Impressions descending.
 
 ### 9.6 Ranking Dropped
 
 Definition:
 
-> Pages whose GSC average position declined meaningfully versus the previous period.
+> Pages whose GSC average position declined by at least 1.0 position versus the previous period.
 
-Prioritize visible pages where the movement is actionable. A movement from 4 → 9 is generally more actionable than 70 → 75, but V1 should keep the explanation transparent rather than show a custom risk score.
+Default sorting:
+
+1. Position Change ascending so the largest declines appear first;
+2. current-period Impressions descending.
+
+This keeps the rule transparent. The UI may explain that a visible page dropping from 4 → 9 deserves attention, but V1 does not invent or expose a custom risk score.
 
 ### 9.7 Newly Ranking
 
 Definition:
 
-> Pages that started getting measurable Google search visibility in the selected period compared with the previous period.
+> Pages with current-period impressions greater than zero and previous-period impressions equal to zero or absent for the same normalized page key under identical dimensions and filters.
 
 Show:
 
@@ -351,17 +369,20 @@ Show:
 - Clicks;
 - number of ranking queries where available.
 
-Do not claim this is the page's exact first ranking date.
+Default sort: current-period Impressions descending.
+
+Do not claim this is the page's exact first ranking date. If the underlying result set is truncated such that previous-period absence cannot be trusted, omit the Newly Ranking classification rather than guess.
 
 ### 9.8 Pages to Improve
 
-GSC-only mode uses transparent first-party signals:
+GSC-only candidates use transparent first-party rules:
 
-- average position roughly 4–20;
-- useful impressions;
-- current Google visibility.
+- current average position from 4.0 through 20.0 inclusive;
+- current-period impressions greater than zero.
 
-When GA4 is connected, reuse the existing `SearchOpportunityService` to enrich prioritization. Its production formula remains unchanged.
+Default sort in GSC-only mode: current-period Impressions descending.
+
+When GA4 is connected, reuse the existing `SearchOpportunityService` to enrich prioritization. Its production formula remains unchanged and is not duplicated in the client.
 
 ### 9.9 Filters
 
@@ -403,6 +424,8 @@ Then show **Keywords for this page** with:
 - Impressions
 - Clicks
 - CTR
+
+The same 1.0-position movement threshold may be used for movement labels in the query list, while the drawer may still show stable queries for context.
 
 This answers both:
 
@@ -654,9 +677,9 @@ Test:
 
 - `11.4 → 6.8` = `+4.6`, Ranking Improved;
 - `4.8 → 9.1` = `-4.3`, Ranking Dropped;
-- stable/no meaningful movement;
+- changes below 1.0 absolute positions are treated as stable for movement tabs;
 - missing previous-period data;
-- Newly Ranking behavior;
+- Newly Ranking behavior, including safe handling when previous-period absence is unreliable because of truncation;
 - URL-to-query drill-down;
 - 7-day, 28-day, and 3-month comparisons.
 
