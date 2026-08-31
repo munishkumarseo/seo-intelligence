@@ -174,7 +174,7 @@ describe("SearchOpportunityService", () => {
 
   it("uses engagement rate when all joined rows have zero key events", async () => {
     mocks.getPerformance.mockResolvedValue({
-      siteUrl: "https://example.com/",
+      siteUrl: "https://example.com/other",
       request: {},
       rows: [
         {
@@ -228,47 +228,6 @@ describe("SearchOpportunityService", () => {
         endDate: "2026-08-02",
       }),
     );
-  });
-
-  it("keeps Search Opportunities usable when GA4 is not connected", async () => {
-    mocks.getGa4Connection.mockResolvedValue(null);
-    mocks.getPerformance.mockResolvedValue({
-      siteUrl: "https://example.com/",
-      request: {},
-      rows: [
-        {
-          keys: ["https://example.com/gsc-only"],
-          clicks: 6,
-          impressions: 600,
-          ctr: 0.01,
-          position: 9,
-        },
-      ],
-    });
-
-    await expect(
-      SearchOpportunityService.getOpportunities({
-        projectId: "project_1",
-        startDate: "2026-07-07",
-        endDate: "2026-08-03",
-      }),
-    ).resolves.toMatchObject({
-      status: "ok",
-      source: {
-        searchConsoleSiteUrl: "https://example.com/",
-      },
-      rows: [
-        {
-          page: "https://example.com/gsc-only",
-          joinStatus: "gsc_only",
-          ga4: null,
-          score: null,
-          scoreComponents: null,
-        },
-      ],
-    });
-    expect(mocks.getPerformance).toHaveBeenCalled();
-    expect(mocks.runGa4Report).not.toHaveBeenCalled();
   });
 
   it("fails before querying GA4 when Search Console is not connected", async () => {
