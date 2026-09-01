@@ -25,9 +25,11 @@ export function classifyOpportunitySearch(
   if (!trimmed) return null;
 
   const containsSpaces = /\s/.test(trimmed);
-  return trimmed.includes("/") ||
+  return (
+    trimmed.includes("/") ||
     trimmed.includes("://") ||
     (!containsSpaces && trimmed.includes("."))
+  )
     ? "page"
     : "query";
 }
