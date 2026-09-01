@@ -102,7 +102,9 @@ async function getReport(input: SearchOpportunitiesInput) {
   const dates = resolveDateRange({ dateRange: input.dateRange });
 
   let movement: PageMovementResult;
-  let queryPageRows: Awaited<ReturnType<typeof GscService.getPerformance>> | null;
+  let queryPageRows: Awaited<
+    ReturnType<typeof GscService.getPerformance>
+  > | null;
   try {
     [movement, queryPageRows] = await Promise.all([
       SearchMovementService.getPageMovements({
