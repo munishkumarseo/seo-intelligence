@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ComponentType } from "react";
 import {
   CircleHelp,
@@ -15,6 +16,7 @@ import {
   connectNavGroup,
   getProjectNavGroups,
 } from "@/client/navigation/items";
+import { productCapabilitiesQueryOptions } from "@/client/features/product/productCapabilitiesQuery";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -53,13 +55,24 @@ function SidebarNavLink({
   icon: ComponentType<{ className?: string }>;
   label: string;
   onNavigate?: () => void;
-  linkProps: LinkOptions;
+  linkProps: LinkOptions & { href?: string };
 }) {
+  const { href, ...routerLinkProps } = linkProps;
+
+  if (href) {
+    return (
+      <a href={href} onClick={onNavigate} className={navItemClass}>
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </a>
+    );
+  }
+
   return (
     <Link
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
-      {...linkProps}
+      {...routerLinkProps}
       className={navItemClass}
       activeProps={navItemActiveProps}
     >
@@ -77,9 +90,13 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
+  const capabilitiesQuery = useQuery(productCapabilitiesQueryOptions());
+  const capabilities = capabilitiesQuery.data;
   const navGroups = [
-    ...(projectId ? getProjectNavGroups(projectId) : []),
-    connectNavGroup,
+    ...(projectId && capabilities
+      ? getProjectNavGroups(projectId, capabilities)
+      : []),
+    ...(capabilities?.dataMode === "full" ? [connectNavGroup] : []),
   ];
   const navigate = useNavigate();
   const location = useLocation();
@@ -181,7 +198,9 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
                 const { icon, label, ...linkProps } = item;
                 return (
                   <SidebarNavLink
-                    key={linkProps.to}
+                    key={
+                      ("href" in linkProps && linkProps.href) || linkProps.to
+                    }
                     icon={icon}
                     label={label}
                     onNavigate={onNavigate}

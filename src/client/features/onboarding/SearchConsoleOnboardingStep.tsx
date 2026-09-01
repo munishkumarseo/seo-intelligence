@@ -45,8 +45,9 @@ export function SearchConsoleOnboardingStep() {
         {project ? <GscConnect projectId={project.id} /> : <Checking />}
 
         <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
-          For now, Search Console data flows through the OpenSEO MCP. We're
-          building it into the OpenSEO app soon too.
+          Search Console powers the in-app Search Performance view and gives the
+          OpenSEO agent first-party clicks, impressions, CTR, and average
+          position data.
         </p>
       </div>
 

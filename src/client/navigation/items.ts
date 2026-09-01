@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
+import type { ProductCapabilities } from "@/shared/product-capabilities";
 
 const projectNavItems = [
   {
@@ -69,13 +70,56 @@ const projectNavItems = [
   },
 ] as const;
 
+const firstPartyProjectNavItems = [
+  {
+    to: "/p/$projectId" as const,
+    hrefTemplate: null,
+    label: "Overview",
+    icon: LayoutDashboard,
+    activeOptions: { exact: true, includeSearch: false },
+  },
+  {
+    to: "/p/$projectId/search-opportunities" as const,
+    hrefTemplate: null,
+    label: "Search Opportunities",
+    icon: TrendingUp,
+  },
+  {
+    to: "/p/$projectId/search-performance" as const,
+    hrefTemplate: null,
+    label: "Search Console",
+    icon: GoogleGlyphMuted,
+  },
+  {
+    // The Analytics route is added later in the plan; use an ordinary href for
+    // this intermediate checkpoint rather than asserting an unregistered route.
+    to: "/p/$projectId" as const,
+    hrefTemplate: "/p/$projectId/analytics",
+    label: "Analytics",
+    icon: Globe,
+  },
+  {
+    to: "/p/$projectId/audit" as const,
+    hrefTemplate: null,
+    label: "Site Audit",
+    icon: ClipboardCheck,
+  },
+  {
+    to: "/p/$projectId/sam" as const,
+    hrefTemplate: null,
+    label: "Ask SEO",
+    icon: Bot,
+  },
+] as const;
+
 const aiNavItem = linkOptions({
   to: "/ai" as const,
   label: "AI & MCP",
   icon: Bot,
 });
 
-// Always-visible sidebar group (not project-scoped, unlike the groups below).
+// Always-visible sidebar group for full mode. First-party mode exposes the
+// existing SAM experience directly as Ask SEO instead of a second AI entry.
 export const connectNavGroup = {
   label: "Connect",
   items: [aiNavItem],
@@ -91,9 +135,33 @@ function getProjectNavItems(projectId: string) {
   );
 }
 
-// Grouped by scope: "My Site" is the project's own domain (tracked data),
-// "Research" is point-at-anything lookup tools.
-export function getProjectNavGroups(projectId: string) {
+function getFirstPartyProjectNavItems(projectId: string) {
+  return firstPartyProjectNavItems.map(({ hrefTemplate, ...item }) => ({
+    ...item,
+    ...(hrefTemplate
+      ? { href: hrefTemplate.replace("$projectId", projectId) }
+      : {}),
+    params: { projectId },
+    search: {},
+  }));
+}
+
+// Full mode keeps OpenSEO's existing information architecture. First-party
+// mode intentionally presents one compact action-oriented workspace and hides
+// all paid-provider destinations.
+export function getProjectNavGroups(
+  projectId: string,
+  capabilities: ProductCapabilities,
+) {
+  if (capabilities.dataMode === "first_party") {
+    return [
+      {
+        label: "SEO Workspace",
+        items: getFirstPartyProjectNavItems(projectId),
+      },
+    ];
+  }
+
   const all = getProjectNavItems(projectId);
   const byPath = (path: (typeof projectNavItems)[number]["to"]) =>
     all.find((i) => i.to === path)!;
