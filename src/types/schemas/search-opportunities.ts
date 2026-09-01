@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { SEARCH_PERFORMANCE_RANGES } from "@/types/schemas/search-performance";
 
-export const SEARCH_OPPORTUNITIES_DEFAULT_LIMIT = 50;
-export const SEARCH_OPPORTUNITIES_MAX_LIMIT = 100;
+const SEARCH_OPPORTUNITIES_DEFAULT_LIMIT = 50;
+const SEARCH_OPPORTUNITIES_MAX_LIMIT = 100;
 
 const optionalSearchSchema = z
   .string()
