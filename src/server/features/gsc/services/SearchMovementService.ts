@@ -91,9 +91,7 @@ function classifyMovement(
     };
   }
 
-  const positionChange = roundPositionChange(
-    previousPosition - currentPosition,
-  );
+  const positionChange = roundPositionChange(previousPosition - currentPosition);
   const category: MovementCategory =
     positionChange >= MOVEMENT_THRESHOLD
       ? "improved"
