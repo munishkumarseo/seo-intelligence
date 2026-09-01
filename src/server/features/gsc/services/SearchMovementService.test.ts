@@ -1,5 +1,6 @@
 import type { GscPerformanceInput } from "@/server/features/gsc/searchAnalytics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SearchMovementService } from "./SearchMovementService";
 
 const mocks = vi.hoisted(() => ({
   getPerformance: vi.fn<(input: GscPerformanceInput) => Promise<unknown>>(),
@@ -10,75 +11,6 @@ vi.mock("@/server/features/gsc/services/GscService", () => ({
     getPerformance: mocks.getPerformance,
   },
 }));
-
-type MovementRow = {
-  page: string;
-  normalizedPage: string;
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  averagePosition: number;
-  previousAveragePosition: number | null;
-  positionChange: number | null;
-  category: "improved" | "new" | "dropped" | "stable";
-  isPageToImprove: boolean;
-};
-
-type QueryMovementRow = {
-  query: string;
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  averagePosition: number;
-  previousAveragePosition: number | null;
-  positionChange: number | null;
-  category: "improved" | "new" | "dropped" | "stable";
-};
-
-type MovementInput = {
-  projectId: string;
-  dateRange?: "last_7_days" | "last_28_days" | "last_3_months";
-  device?: "DESKTOP" | "MOBILE" | "TABLET";
-  country?: string;
-};
-
-type SearchMovementModule = {
-  SearchMovementService: {
-    getPageMovements: (input: MovementInput) => Promise<{
-      rows: MovementRow[];
-      previousTruncated: boolean;
-    }>;
-    getPageQueries: (input: MovementInput & { page: string }) => Promise<{
-      rows: QueryMovementRow[];
-      previousTruncated: boolean;
-    }>;
-  };
-};
-
-function isSearchMovementModule(value: unknown): value is SearchMovementModule {
-  if (typeof value !== "object" || value === null) return false;
-  if (!("SearchMovementService" in value)) return false;
-  const service = value.SearchMovementService;
-  return (
-    typeof service === "object" &&
-    service !== null &&
-    "getPageMovements" in service &&
-    typeof service.getPageMovements === "function" &&
-    "getPageQueries" in service &&
-    typeof service.getPageQueries === "function"
-  );
-}
-
-async function loadService(): Promise<
-  SearchMovementModule["SearchMovementService"]
-> {
-  const modulePath = ["./SearchMovement", "Service"].join("");
-  const loaded = (await import(modulePath)) as unknown;
-  if (!isSearchMovementModule(loaded)) {
-    throw new Error("SearchMovementService module is unavailable");
-  }
-  return loaded.SearchMovementService;
-}
 
 function gscRow(key: string, position: number, impressions = 100, clicks = 10) {
   return {
@@ -136,8 +68,7 @@ describe("SearchMovementService", () => {
         ]),
       );
 
-    const service = await loadService();
-    const response = await service.getPageMovements({
+    const response = await SearchMovementService.getPageMovements({
       projectId: "project_1",
       dateRange: "last_28_days",
       device: "MOBILE",
@@ -213,8 +144,7 @@ describe("SearchMovementService", () => {
       )
       .mockResolvedValueOnce(result(previousRows));
 
-    const service = await loadService();
-    const response = await service.getPageMovements({
+    const response = await SearchMovementService.getPageMovements({
       projectId: "project_1",
       dateRange: "last_28_days",
     });
@@ -244,8 +174,7 @@ describe("SearchMovementService", () => {
         ]),
       );
 
-    const service = await loadService();
-    const response = await service.getPageQueries({
+    const response = await SearchMovementService.getPageQueries({
       projectId: "project_1",
       page: "https://example.com/dental-crowns",
       dateRange: "last_28_days",
