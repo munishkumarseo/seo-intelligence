@@ -20,6 +20,19 @@ describe("getProjectNavGroups", () => {
     ]);
   });
 
+  it("uses the registered Search Opportunities project route", () => {
+    const firstParty = getProductCapabilitiesForMode("first_party");
+    const searchOpportunities = getProjectNavGroups("p1", firstParty)
+      .flatMap((group) => group.items)
+      .find((item) => item.label === "Search Opportunities");
+
+    expect(searchOpportunities).toMatchObject({
+      to: "/p/$projectId/search-opportunities",
+      params: { projectId: "p1" },
+    });
+    expect(searchOpportunities).not.toHaveProperty("href");
+  });
+
   it("keeps paid-provider navigation available in full mode", () => {
     const full = getProductCapabilitiesForMode("full");
     const labels = flattenLabels(getProjectNavGroups("p1", full));
