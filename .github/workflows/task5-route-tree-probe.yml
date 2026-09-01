@@ -1,0 +1,28 @@
+name: Task 5 Route Tree Probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate route tree
+        run: pnpm vite build || true
+      - name: Print generated route tree
+        run: |
+          echo '===ROUTE_TREE_BEGIN==='
+          sed -n '1,400p' src/routeTree.gen.ts
+          echo '===ROUTE_TREE_400==='
+          sed -n '401,800p' src/routeTree.gen.ts
+          echo '===ROUTE_TREE_800==='
+          sed -n '801,1200p' src/routeTree.gen.ts
+          echo '===ROUTE_TREE_END==='
+          exit 1
