@@ -198,7 +198,9 @@ describe("SearchMovementService", () => {
       type: "web",
       dataState: "final",
     });
-    expect(previousCall?.endDate).toBeLessThan(currentCall?.startDate ?? "");
+    const currentStart = new Date(currentCall?.startDate ?? "").getTime();
+    const previousEnd = new Date(previousCall?.endDate ?? "").getTime();
+    expect(previousEnd).toBeLessThan(currentStart);
   });
 
   it("does not call an absent page newly ranking when previous data is truncated", async () => {
