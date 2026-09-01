@@ -79,10 +79,8 @@ const firstPartyProjectNavItems = [
     activeOptions: { exact: true, includeSearch: false },
   },
   {
-    // This becomes a typed router link as soon as Task 5 adds the route file.
-    // Until then, keep the destination explicit without widening router types.
-    to: "/p/$projectId" as const,
-    hrefTemplate: "/p/$projectId/search-opportunities",
+    to: "/p/$projectId/search-opportunities" as const,
+    hrefTemplate: null,
     label: "Search Opportunities",
     icon: TrendingUp,
   },
