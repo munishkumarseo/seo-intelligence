@@ -29,7 +29,9 @@ vi.mock("@/server/features/ga4/services/SearchOpportunityService", () => ({
 
 type TableServiceModule = {
   SearchOpportunityTableService: {
-    getRows: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    getRows: (
+      input: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>>;
     getQueries: (
       input: Record<string, unknown>,
     ) => Promise<Record<string, unknown>>;
@@ -54,7 +56,9 @@ async function loadService() {
   const modulePath = "./SearchOpportunityTableService";
   const loaded = (await import(/* @vite-ignore */ modulePath)) as unknown;
   if (!isTableServiceModule(loaded)) {
-    throw new Error("SearchOpportunityTableService module has the wrong shape.");
+    throw new Error(
+      "SearchOpportunityTableService module has the wrong shape.",
+    );
   }
   return loaded.SearchOpportunityTableService;
 }
@@ -129,7 +133,7 @@ describe("SearchOpportunityTableService", () => {
     mocks.getGa4Connection.mockResolvedValue(null);
   });
 
-  it("keeps movement evidence primary and never touches GA4 outside Pages to Improve", async () => {
+  it("does not use GA4 outside Pages to Improve", async () => {
     const service = await loadService();
     const response = await service.getRows({
       projectId: "project_1",
@@ -160,7 +164,7 @@ describe("SearchOpportunityTableService", () => {
     expect(mocks.getOpportunities).not.toHaveBeenCalled();
   });
 
-  it("keeps Pages to Improve fully usable without GA4 and orders by GSC demand", async () => {
+  it("keeps Pages to Improve usable without GA4", async () => {
     const service = await loadService();
     const response = await service.getRows({
       projectId: "project_1",
@@ -184,7 +188,7 @@ describe("SearchOpportunityTableService", () => {
     ]);
   });
 
-  it("merges the existing GA4 scorer only for Pages to Improve without overwriting movement metrics", async () => {
+  it("merges the existing scorer without replacing movement metrics", async () => {
     mocks.getGa4Connection.mockResolvedValue({ propertyId: "properties/123" });
     mocks.getOpportunities.mockResolvedValue({
       rows: [
@@ -250,7 +254,7 @@ describe("SearchOpportunityTableService", () => {
     });
   });
 
-  it("preserves query-search truncation and applies the requested limit after filtering", async () => {
+  it("preserves search truncation and limits after filtering", async () => {
     mocks.filterRows.mockResolvedValue({
       rows: [improved, newlyRanking],
       queryLookupTruncated: true,
@@ -274,7 +278,7 @@ describe("SearchOpportunityTableService", () => {
     expect(response.meta).toMatchObject({ queryLookupTruncated: true });
   });
 
-  it("delegates drawer query comparison to SearchMovementService and exposes truncation", async () => {
+  it("delegates drawer comparison to movement service", async () => {
     mocks.getPageQueries.mockResolvedValue({
       rows: [
         {
