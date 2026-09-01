@@ -22,9 +22,18 @@ describe("getProjectNavGroups", () => {
 
   it("uses the registered Search Opportunities project route", () => {
     const firstParty = getProductCapabilitiesForMode("first_party");
-    const searchOpportunities = getProjectNavGroups("p1", firstParty)
-      .flatMap((group) => group.items)
-      .find((item) => item.label === "Search Opportunities");
+    const workspace = getProjectNavGroups("p1", firstParty).find(
+      (group) => group.label === "SEO Workspace",
+    );
+
+    expect(workspace).toBeDefined();
+    if (!workspace || workspace.label !== "SEO Workspace") {
+      throw new Error("Expected the first-party SEO Workspace navigation group");
+    }
+
+    const searchOpportunities = workspace.items.find(
+      (item) => item.label === "Search Opportunities",
+    );
 
     expect(searchOpportunities).toMatchObject({
       to: "/p/$projectId/search-opportunities",
