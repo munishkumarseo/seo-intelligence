@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  classifyOpportunitySearch,
+  filterSearchOpportunityRows,
+} from "./SearchOpportunityQueryFilter";
 
 const mocks = vi.hoisted(() => ({
   getPerformance: vi.fn(),
@@ -20,42 +24,6 @@ type TestOpportunityRow = {
   category: "improved" | "new" | "dropped" | "stable";
   isPageToImprove: boolean;
 };
-
-type SearchOpportunityQueryFilterModule = {
-  classifyOpportunitySearch: (value: string) => "page" | "query" | null;
-  filterSearchOpportunityRows: (input: {
-    projectId: string;
-    dateRange?: "last_7_days" | "last_28_days" | "last_3_months";
-    device?: "DESKTOP" | "MOBILE" | "TABLET";
-    country?: string;
-    search?: string;
-    rows: TestOpportunityRow[];
-  }) => Promise<{
-    rows: TestOpportunityRow[];
-    queryLookupTruncated: boolean;
-  }>;
-};
-
-function isFilterModule(
-  value: unknown,
-): value is SearchOpportunityQueryFilterModule {
-  if (typeof value !== "object" || value === null) return false;
-  return (
-    "classifyOpportunitySearch" in value &&
-    typeof value.classifyOpportunitySearch === "function" &&
-    "filterSearchOpportunityRows" in value &&
-    typeof value.filterSearchOpportunityRows === "function"
-  );
-}
-
-async function loadFilterModule(): Promise<SearchOpportunityQueryFilterModule> {
-  const modulePath = "./SearchOpportunityQueryFilter";
-  const loaded = (await import(/* @vite-ignore */ modulePath)) as unknown;
-  if (!isFilterModule(loaded)) {
-    throw new Error("SearchOpportunityQueryFilter module has the wrong shape.");
-  }
-  return loaded;
-}
 
 const rows: TestOpportunityRow[] = [
   {
@@ -89,9 +57,7 @@ describe("SearchOpportunityQueryFilter", () => {
     mocks.getPerformance.mockReset();
   });
 
-  it("classifies deterministic page-looking and keyword searches", async () => {
-    const { classifyOpportunitySearch } = await loadFilterModule();
-
+  it("classifies deterministic page-looking and keyword searches", () => {
     expect(classifyOpportunitySearch("/dental-crowns")).toBe("page");
     expect(classifyOpportunitySearch("https://example.com/dental-crowns")).toBe(
       "page",
@@ -103,8 +69,6 @@ describe("SearchOpportunityQueryFilter", () => {
   });
 
   it("filters page-looking searches locally using normalized page identity", async () => {
-    const { filterSearchOpportunityRows } = await loadFilterModule();
-
     const result = await filterSearchOpportunityRows({
       projectId: "project_1",
       search: "/DENTAL-CROWNS",
@@ -139,7 +103,6 @@ describe("SearchOpportunityQueryFilter", () => {
         },
       ],
     });
-    const { filterSearchOpportunityRows } = await loadFilterModule();
 
     const result = await filterSearchOpportunityRows({
       projectId: "project_1",
@@ -190,7 +153,6 @@ describe("SearchOpportunityQueryFilter", () => {
         position: 50,
       })),
     });
-    const { filterSearchOpportunityRows } = await loadFilterModule();
 
     const result = await filterSearchOpportunityRows({
       projectId: "project_1",
