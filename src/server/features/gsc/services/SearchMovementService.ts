@@ -86,12 +86,13 @@ function classifyMovement(
     return {
       previousAveragePosition: null,
       positionChange: null,
-      category:
-        currentImpressions > 0 && !previousTruncated ? "new" : "stable",
+      category: currentImpressions > 0 && !previousTruncated ? "new" : "stable",
     };
   }
 
-  const positionChange = roundPositionChange(previousPosition - currentPosition);
+  const positionChange = roundPositionChange(
+    previousPosition - currentPosition,
+  );
   const category: MovementCategory =
     positionChange >= MOVEMENT_THRESHOLD
       ? "improved"
