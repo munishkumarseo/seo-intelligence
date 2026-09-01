@@ -33,10 +33,3 @@ export const searchOpportunityQueriesInputSchema = z.object({
   ...searchOpportunityFilterShape,
   page: z.string().trim().min(1),
 });
-
-export type SearchOpportunitiesInput = z.infer<
-  typeof searchOpportunitiesInputSchema
->;
-export type SearchOpportunityQueriesInput = z.infer<
-  typeof searchOpportunityQueriesInputSchema
->;
