@@ -16,16 +16,31 @@ jobs:
       POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
       POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
     steps:
+      - name: Check PostHog sourcemap configuration
+        id: posthog
+        shell: bash
+        run: |
+          if [[ -n "$POSTHOG_CLI_TOKEN" && -n "$POSTHOG_CLI_ENV_ID" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping sourcemap upload because PostHog CLI credentials are not configured."
+          fi
       - name: Checkout
+        if: steps.posthog.outputs.configured == 'true'
         uses: actions/checkout@v4
       - name: Setup pnpm
+        if: steps.posthog.outputs.configured == 'true'
         uses: pnpm/action-setup@v4
       - name: Setup Node.js
+        if: steps.posthog.outputs.configured == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - name: Install dependencies
+        if: steps.posthog.outputs.configured == 'true'
         run: pnpm install --frozen-lockfile
       - name: Build and upload sourcemaps
+        if: steps.posthog.outputs.configured == 'true'
         run: pnpm run sourcemaps:upload
