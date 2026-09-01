@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CI checks
-        run: pnpm run ci:check
+      - name: Diagnose opportunity filter formatting
+        run: |
+          pnpm exec prettier src/server/features/gsc/services/SearchOpportunityQueryFilter.ts --write
+          git diff -- src/server/features/gsc/services/SearchOpportunityQueryFilter.ts
+          exit 1
 
       - name: Run tests
         run: pnpm run test:ci
