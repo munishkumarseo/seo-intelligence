@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 type SearchOpportunitiesSchemaModule = {
-  SEARCH_OPPORTUNITY_TABS: readonly [
-    "improved",
-    "new",
-    "dropped",
-    "improve",
-  ];
+  SEARCH_OPPORTUNITY_TABS: readonly ["improved", "new", "dropped", "improve"];
   searchOpportunitiesInputSchema: {
     parse: (value: unknown) => unknown;
     safeParse: (value: unknown) => { success: boolean };
