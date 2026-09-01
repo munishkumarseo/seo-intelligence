@@ -239,12 +239,14 @@ describe("SearchOpportunityTableService", () => {
         }),
       ]),
     );
-    expect(response.rows[0]).toEqual(
-      expect.objectContaining({
-        normalizedPage: "example.com/improved",
-        score: 91,
-      }),
-    );
+    expect(response).toMatchObject({
+      rows: [
+        expect.objectContaining({
+          normalizedPage: "example.com/improved",
+          score: 91,
+        }),
+      ],
+    });
     expect(response.meta).toMatchObject({
       ga4Enriched: true,
       scoring: { formula: "existing-formula" },
