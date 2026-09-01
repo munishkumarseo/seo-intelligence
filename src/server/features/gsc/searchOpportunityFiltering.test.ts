@@ -66,8 +66,8 @@ describe("search opportunity filtering", () => {
   });
 
   it("returns the original page set when no search is active", () => {
-    expect(
-      filterSearchOpportunityPages(pageRows, undefined, new Set()),
-    ).toBe(pageRows);
+    expect(filterSearchOpportunityPages(pageRows, undefined, new Set())).toBe(
+      pageRows,
+    );
   });
 });
