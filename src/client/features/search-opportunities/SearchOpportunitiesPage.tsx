@@ -124,11 +124,15 @@ export function SearchOpportunitiesPage({ projectId }: { projectId: string }) {
               </div>
               <div className="stat rounded-xl border border-base-300 bg-base-100">
                 <div className="stat-title">Winners</div>
-                <div className="stat-value text-2xl">{report.counts.winners}</div>
+                <div className="stat-value text-2xl">
+                  {report.counts.winners}
+                </div>
               </div>
               <div className="stat rounded-xl border border-base-300 bg-base-100">
                 <div className="stat-title">Losers</div>
-                <div className="stat-value text-2xl">{report.counts.losers}</div>
+                <div className="stat-value text-2xl">
+                  {report.counts.losers}
+                </div>
               </div>
             </div>
 
@@ -175,7 +179,10 @@ export function SearchOpportunitiesPage({ projectId }: { projectId: string }) {
                     ))}
                     {report.sections.pagesToImprove.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-base-content/60">
+                        <td
+                          colSpan={5}
+                          className="py-8 text-center text-base-content/60"
+                        >
                           No matching pages to improve.
                         </td>
                       </tr>
@@ -186,10 +193,12 @@ export function SearchOpportunitiesPage({ projectId }: { projectId: string }) {
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              {([
-                ["Winners", report.sections.winners],
-                ["Losers", report.sections.losers],
-              ] as const).map(([label, rows]) => (
+              {(
+                [
+                  ["Winners", report.sections.winners],
+                  ["Losers", report.sections.losers],
+                ] as const
+              ).map(([label, rows]) => (
                 <section
                   key={label}
                   className="overflow-hidden rounded-xl border border-base-300 bg-base-100"
