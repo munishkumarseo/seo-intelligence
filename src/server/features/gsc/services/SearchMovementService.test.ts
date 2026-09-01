@@ -1,7 +1,8 @@
+import type { GscPerformanceInput } from "@/server/features/gsc/searchAnalytics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  getPerformance: vi.fn(),
+  getPerformance: vi.fn<(input: GscPerformanceInput) => Promise<unknown>>(),
 }));
 
 vi.mock("@/server/features/gsc/services/GscService", () => ({
@@ -192,12 +193,12 @@ describe("SearchMovementService", () => {
     expect(previousCall).toMatchObject({
       projectId: "project_1",
       dimensions: ["page"],
-      filters: currentCall.filters,
+      filters: currentCall?.filters,
       rowLimit: 1_000,
       type: "web",
       dataState: "final",
     });
-    expect(previousCall.endDate).toBeLessThan(currentCall.startDate);
+    expect(previousCall?.endDate).toBeLessThan(currentCall?.startDate ?? "");
   });
 
   it("does not call an absent page newly ranking when previous data is truncated", async () => {
