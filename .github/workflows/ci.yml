@@ -32,15 +32,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Disposable route-tree generation probe; do not merge this workflow change.
+      - name: Task 5 route tree probe
+        run: |
+          pnpm vite build || true
+          git diff -- src/routeTree.gen.ts
+          test -n "$(git status --porcelain -- src/routeTree.gen.ts)"
+          exit 1
+
       - name: Run CI checks
         run: pnpm run ci:check
 
       - name: Run tests
         run: pnpm run test:ci
 
-      # Runs the leanWorkerBundle generateBundle assertion: fails if a
-      # denylisted package (dataforseo-client, autumn-js, ...) re-enters the
-      # worker's eager startup graph. See vite-plugin-lean-worker-bundle.ts.
       - name: Build worker (eager-bundle guard)
         run: pnpm vite build
 
