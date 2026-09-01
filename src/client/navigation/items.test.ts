@@ -28,7 +28,9 @@ describe("getProjectNavGroups", () => {
 
     expect(workspace).toBeDefined();
     if (!workspace || workspace.label !== "SEO Workspace") {
-      throw new Error("Expected the first-party SEO Workspace navigation group");
+      throw new Error(
+        "Expected the first-party SEO Workspace navigation group",
+      );
     }
 
     const searchOpportunities = workspace.items.find(
