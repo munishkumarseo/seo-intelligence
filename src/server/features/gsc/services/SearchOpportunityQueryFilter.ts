@@ -25,25 +25,23 @@ export function classifyOpportunitySearch(
   if (!trimmed) return null;
 
   const containsSpaces = /\s/.test(trimmed);
-  return (
-    trimmed.includes("/") ||
+  return trimmed.includes("/") ||
     trimmed.includes("://") ||
     (!containsSpaces && trimmed.includes("."))
-  )
     ? "page"
     : "query";
 }
 
-export async function filterSearchOpportunityRows<T extends SearchablePageRow>(
-  input: {
-    projectId: string;
-    dateRange?: SearchPerformanceDateRange;
-    device?: SearchPerformanceDevice;
-    country?: string;
-    search?: string;
-    rows: T[];
-  },
-): Promise<{ rows: T[]; queryLookupTruncated: boolean }> {
+export async function filterSearchOpportunityRows<
+  T extends SearchablePageRow,
+>(input: {
+  projectId: string;
+  dateRange?: SearchPerformanceDateRange;
+  device?: SearchPerformanceDevice;
+  country?: string;
+  search?: string;
+  rows: T[];
+}): Promise<{ rows: T[]; queryLookupTruncated: boolean }> {
   const search = input.search?.trim() ?? "";
   const searchKind = classifyOpportunitySearch(search);
 
