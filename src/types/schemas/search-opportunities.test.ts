@@ -1,47 +1,12 @@
 import { describe, expect, it } from "vitest";
-
-type SearchOpportunitiesSchemaModule = {
-  SEARCH_OPPORTUNITY_TABS: readonly ["improved", "new", "dropped", "improve"];
-  searchOpportunitiesInputSchema: {
-    parse: (value: unknown) => unknown;
-    safeParse: (value: unknown) => { success: boolean };
-  };
-  searchOpportunityQueriesInputSchema: {
-    parse: (value: unknown) => unknown;
-    safeParse: (value: unknown) => { success: boolean };
-  };
-};
-
-function isSchemaModule(
-  value: unknown,
-): value is SearchOpportunitiesSchemaModule {
-  if (typeof value !== "object" || value === null) return false;
-  return (
-    "SEARCH_OPPORTUNITY_TABS" in value &&
-    Array.isArray(value.SEARCH_OPPORTUNITY_TABS) &&
-    "searchOpportunitiesInputSchema" in value &&
-    typeof value.searchOpportunitiesInputSchema === "object" &&
-    value.searchOpportunitiesInputSchema !== null &&
-    "searchOpportunityQueriesInputSchema" in value &&
-    typeof value.searchOpportunityQueriesInputSchema === "object" &&
-    value.searchOpportunityQueriesInputSchema !== null
-  );
-}
-
-async function loadSchemaModule(): Promise<SearchOpportunitiesSchemaModule> {
-  const modulePath = "./search-opportunities";
-  const loaded = (await import(/* @vite-ignore */ modulePath)) as unknown;
-  if (!isSchemaModule(loaded)) {
-    throw new Error("Search opportunities schema module has the wrong shape.");
-  }
-  return loaded;
-}
+import {
+  SEARCH_OPPORTUNITY_TABS,
+  searchOpportunitiesInputSchema,
+  searchOpportunityQueriesInputSchema,
+} from "./search-opportunities";
 
 describe("search opportunities schemas", () => {
-  it("locks the approved tab values and table defaults", async () => {
-    const { SEARCH_OPPORTUNITY_TABS, searchOpportunitiesInputSchema } =
-      await loadSchemaModule();
-
+  it("locks the approved tab values and table defaults", () => {
     expect(SEARCH_OPPORTUNITY_TABS).toEqual([
       "improved",
       "new",
@@ -55,9 +20,7 @@ describe("search opportunities schemas", () => {
     });
   });
 
-  it("accepts approved filters and normalizes the GSC country code", async () => {
-    const { searchOpportunitiesInputSchema } = await loadSchemaModule();
-
+  it("accepts approved filters and normalizes the GSC country code", () => {
     expect(
       searchOpportunitiesInputSchema.parse({
         tab: "improve",
@@ -77,9 +40,7 @@ describe("search opportunities schemas", () => {
     });
   });
 
-  it("rejects unknown tabs, devices, ranges, countries, and limits over 100", async () => {
-    const { searchOpportunitiesInputSchema } = await loadSchemaModule();
-
+  it("rejects unknown tabs, devices, ranges, countries, and limits over 100", () => {
     expect(
       searchOpportunitiesInputSchema.safeParse({ tab: "stable" }).success,
     ).toBe(false);
@@ -109,9 +70,7 @@ describe("search opportunities schemas", () => {
     ).toBe(false);
   });
 
-  it("requires a page for the query drawer and shares the same GSC filters", async () => {
-    const { searchOpportunityQueriesInputSchema } = await loadSchemaModule();
-
+  it("requires a page for the query drawer and shares the same GSC filters", () => {
     expect(
       searchOpportunityQueriesInputSchema.parse({
         page: "https://example.com/dental-crowns/",
