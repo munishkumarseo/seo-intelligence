@@ -40,10 +40,11 @@ function isFilterModule(
   value: unknown,
 ): value is SearchOpportunityQueryFilterModule {
   if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Record<string, unknown>;
   return (
-    typeof candidate.classifyOpportunitySearch === "function" &&
-    typeof candidate.filterSearchOpportunityRows === "function"
+    "classifyOpportunitySearch" in value &&
+    typeof value.classifyOpportunitySearch === "function" &&
+    "filterSearchOpportunityRows" in value &&
+    typeof value.filterSearchOpportunityRows === "function"
   );
 }
 
