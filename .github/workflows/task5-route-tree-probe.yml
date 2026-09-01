@@ -1,7 +1,9 @@
 name: Task 5 Route Tree Probe
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feat/task5-search-opportunities-api
 
 jobs:
   generate:
