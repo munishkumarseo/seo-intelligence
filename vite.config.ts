@@ -1,14 +1,21 @@
+import { fileURLToPath } from "node:url";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig, loadEnv } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import { nitro } from "nitro/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 
+const NODE_DATABASE_PROVIDER = fileURLToPath(
+  new URL("./src/db/provider.node.ts", import.meta.url),
+);
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const isNodeRuntime = process.env.OPENSEO_RUNTIME === "node";
   const port = process.env.PORT
     ? Number(process.env.PORT)
     : env.PORT
@@ -30,6 +37,13 @@ export default defineConfig(({ mode }) => {
       "POSTHOG_HOST",
       "TURNSTILE_SITE_KEY",
     ],
+    resolve: {
+      alias: isNodeRuntime
+        ? {
+            "@/db/provider": NODE_DATABASE_PROVIDER,
+          }
+        : {},
+    },
     server: {
       allowedHosts,
       port,
@@ -52,9 +66,15 @@ export default defineConfig(({ mode }) => {
             },
           })
         : null,
-      cloudflare({ inspectorPort: false, viteEnvironment: { name: "ssr" } }),
+      isNodeRuntime
+        ? null
+        : cloudflare({
+            inspectorPort: false,
+            viteEnvironment: { name: "ssr" },
+          }),
       tsConfigPaths(),
       tanstackStart(),
+      isNodeRuntime ? nitro() : null,
       viteReact(),
       tailwindcss(),
     ],
