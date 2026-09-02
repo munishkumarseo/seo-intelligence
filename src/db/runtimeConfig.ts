@@ -1,5 +1,4 @@
 type OpenSeoRuntime = "cloudflare" | "node";
-type DatabaseProvider = "d1" | "postgres";
 
 interface RuntimeConfigInput {
   runtime: OpenSeoRuntime;
