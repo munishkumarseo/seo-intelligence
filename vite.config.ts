@@ -16,6 +16,11 @@ const NODE_DATABASE_PROVIDER = fileURLToPath(
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const isNodeRuntime = process.env.OPENSEO_RUNTIME === "node";
+  const aliases: Record<string, string> = {};
+  if (isNodeRuntime) {
+    aliases["@/db/provider"] = NODE_DATABASE_PROVIDER;
+  }
+
   const port = process.env.PORT
     ? Number(process.env.PORT)
     : env.PORT
@@ -38,11 +43,7 @@ export default defineConfig(({ mode }) => {
       "TURNSTILE_SITE_KEY",
     ],
     resolve: {
-      alias: isNodeRuntime
-        ? {
-            "@/db/provider": NODE_DATABASE_PROVIDER,
-          }
-        : {},
+      alias: aliases,
     },
     server: {
       allowedHosts,
