@@ -1,14 +1,14 @@
-export type OpenSeoRuntime = "cloudflare" | "node";
-export type DatabaseProvider = "d1" | "postgres";
+type OpenSeoRuntime = "cloudflare" | "node";
+type DatabaseProvider = "d1" | "postgres";
 
-export interface RuntimeConfigInput {
+interface RuntimeConfigInput {
   runtime: OpenSeoRuntime;
   databaseProvider?: string;
   databaseUrl?: string;
   hyperdriveConnectionString?: string;
 }
 
-export type ResolvedDatabaseConfig =
+type ResolvedDatabaseConfig =
   | {
       runtime: "cloudflare";
       databaseProvider: "d1";
