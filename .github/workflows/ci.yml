@@ -76,3 +76,33 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  nitro-lock:
+    if: github.event_name == 'pull_request' && github.head_ref == 'arch/vercel-neon-runtime'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate Nitro dependency lock
+        run: pnpm add -D nitro --lockfile-only
+
+      - name: Upload generated dependency files
+        uses: actions/upload-artifact@v4
+        with:
+          name: nitro-lock
+          path: |
+            package.json
+            pnpm-lock.yaml
+          if-no-files-found: error
