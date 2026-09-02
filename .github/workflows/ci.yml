@@ -38,6 +38,13 @@ jobs:
       - name: Run tests
         run: pnpm run test:ci
 
+      - name: Build Node/Vercel target
+        run: pnpm run build:node
+        env:
+          OPENSEO_RUNTIME: node
+          DATABASE_PROVIDER: postgres
+          DATABASE_URL: postgresql://build-only.invalid/openseo
+
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
 
