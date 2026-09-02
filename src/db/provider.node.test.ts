@@ -1,4 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  getDatabaseProvider,
+  getPostgresConnectionString,
+} from "./provider.node";
 
 const originalDatabaseProvider = process.env.DATABASE_PROVIDER;
 const originalDatabaseUrl = process.env.DATABASE_URL;
@@ -23,27 +27,21 @@ afterEach(() => {
 });
 
 describe("Node database provider", () => {
-  it("uses Postgres with DATABASE_URL", async () => {
-    const { getDatabaseProvider, getPostgresConnectionString } = await import(
-      "./provider.node"
-    );
-
+  it("uses Postgres with DATABASE_URL", () => {
     expect(getDatabaseProvider()).toBe("postgres");
     expect(getPostgresConnectionString()).toBe(
       "postgresql://example.invalid/openseo",
     );
   });
 
-  it("rejects D1 on Node", async () => {
+  it("rejects D1 on Node", () => {
     process.env.DATABASE_PROVIDER = "d1";
-    const { getDatabaseProvider } = await import("./provider.node");
 
     expect(() => getDatabaseProvider()).toThrow(/D1 is not supported/i);
   });
 
-  it("requires DATABASE_URL", async () => {
+  it("requires DATABASE_URL", () => {
     delete process.env.DATABASE_URL;
-    const { getPostgresConnectionString } = await import("./provider.node");
 
     expect(() => getPostgresConnectionString()).toThrow(/DATABASE_URL/i);
   });
