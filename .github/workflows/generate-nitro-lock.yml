@@ -3,15 +3,18 @@ name: Generate Nitro Lock
 on:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   generate:
     if: github.head_ref == 'arch/vercel-neon-runtime'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: arch/vercel-neon-runtime
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -22,14 +25,27 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Generate Nitro dependency lock
-        run: pnpm add -D nitro --lockfile-only
+      - name: Add reproducible Node build dependency and script
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const path = "package.json";
+          const pkg = JSON.parse(fs.readFileSync(path, "utf8"));
+          pkg.scripts["build:node"] = "OPENSEO_RUNTIME=node vite build && tsc --noEmit";
+          pkg.devDependencies.nitro = "3.0.260610-beta";
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+          pnpm install --lockfile-only
+          pnpm exec prettier --write package.json pnpm-lock.yaml
 
-      - name: Upload generated dependency files
-        uses: actions/upload-artifact@v4
-        with:
-          name: nitro-lock
-          path: |
-            package.json
-            pnpm-lock.yaml
-          if-no-files-found: error
+      - name: Commit generated dependency files
+        run: |
+          if git diff --quiet -- package.json pnpm-lock.yaml; then
+            echo "Dependency files already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml
+          git commit -m "build: add Nitro Node target dependency"
+          git push origin HEAD:arch/vercel-neon-runtime
