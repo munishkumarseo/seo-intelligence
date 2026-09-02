@@ -36,7 +36,6 @@ jobs:
           fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
           NODE
           pnpm install --lockfile-only
-          pnpm exec prettier --write package.json pnpm-lock.yaml
 
       - name: Commit generated dependency files
         run: |
