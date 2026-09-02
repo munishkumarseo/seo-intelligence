@@ -1,4 +1,4 @@
-import { getDatabaseProvider } from "./provider";
+import { getDatabaseProvider } from "@/db/provider";
 import { d1Db } from "./d1/client";
 import { pgDb } from "./pg/client";
 
