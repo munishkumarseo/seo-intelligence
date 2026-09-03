@@ -11,6 +11,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  runtime-inventory:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Inventory Cloudflare runtime imports
+        run: grep -R --line-number --include='*.ts' --include='*.tsx' 'cloudflare:workers' src || true
+
   ci:
     runs-on: ubuntu-latest
 
