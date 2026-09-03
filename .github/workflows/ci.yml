@@ -11,6 +11,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  runtime-inventory:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Inventory Cloudflare runtime imports
+        run: grep -R --line-number --include='*.ts' --include='*.tsx' 'cloudflare:workers' src || true
+
   ci:
     runs-on: ubuntu-latest
 
@@ -37,6 +49,13 @@ jobs:
 
       - name: Run tests
         run: pnpm run test:ci
+
+      - name: Build Node/Vercel target
+        run: pnpm run build:node
+        env:
+          OPENSEO_RUNTIME: node
+          DATABASE_PROVIDER: postgres
+          DATABASE_URL: postgresql://build-only.invalid/openseo
 
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
