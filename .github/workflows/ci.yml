@@ -11,34 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  migration-bundle:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Build canonical migration bundle
-        run: |
-          set -euo pipefail
-          : > open-seo-postgres-migrations.sql
-          for file in $(find drizzle-pg -maxdepth 1 -type f -name '*.sql' | sort); do
-            printf '\n-- BEGIN %s\n' "$file" >> open-seo-postgres-migrations.sql
-            sed '/^--> statement-breakpoint$/d' "$file" >> open-seo-postgres-migrations.sql
-            printf '\n-- END %s\n' "$file" >> open-seo-postgres-migrations.sql
-          done
-          test "$(find drizzle-pg -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 21
-
-      - name: Upload canonical migration bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: open-seo-postgres-migrations
-          path: open-seo-postgres-migrations.sql
-          if-no-files-found: error
-          retention-days: 1
-
   ci:
     runs-on: ubuntu-latest
 
@@ -102,6 +74,7 @@ jobs:
 
     env:
       POSTGRES_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/openseo
+      PGPASSWORD: postgres
 
     steps:
       - name: Checkout
@@ -160,6 +133,74 @@ jobs:
             await sql.end();
           }
           NODE
+
+      - name: Build Neon bootstrap SQL
+        run: |
+          set -euo pipefail
+          pg_dump "$POSTGRES_DATABASE_URL" \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            > open-seo-neon-bootstrap.sql
+          pg_dump "$POSTGRES_DATABASE_URL" \
+            --data-only \
+            --inserts \
+            --column-inserts \
+            --table='drizzle.__drizzle_migrations' \
+            --no-owner \
+            --no-privileges \
+            >> open-seo-neon-bootstrap.sql
+
+      - name: Verify bootstrap SQL restores cleanly
+        run: |
+          set -euo pipefail
+          createdb -h 127.0.0.1 -U postgres openseo_bootstrap
+          psql -h 127.0.0.1 -U postgres -d openseo_bootstrap \
+            -v ON_ERROR_STOP=1 \
+            -f open-seo-neon-bootstrap.sql
+          BOOTSTRAP_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/openseo_bootstrap \
+          node --input-type=module <<'NODE'
+          import postgres from "postgres";
+
+          const sql = postgres(process.env.BOOTSTRAP_DATABASE_URL, { max: 1 });
+          try {
+            const [{ count }] = await sql`
+              select count(*)::int as count
+              from drizzle.__drizzle_migrations
+            `;
+            if (count !== 21) {
+              throw new Error(`Bootstrap expected 21 Drizzle migrations, found ${count}`);
+            }
+
+            const expectedTables = [
+              "projects",
+              "gsc_connections",
+              "ga4_connections",
+              "audits",
+              "rank_tracking_configs",
+              "user",
+              "organization",
+            ];
+            for (const table of expectedTables) {
+              const [{ relation }] = await sql`
+                select to_regclass(${`public.${table}`})::text as relation
+              `;
+              if (!relation) {
+                throw new Error(`Bootstrap expected public.${table}`);
+              }
+            }
+          } finally {
+            await sql.end();
+          }
+          NODE
+
+      - name: Upload verified Neon bootstrap SQL
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-seo-neon-bootstrap
+          path: open-seo-neon-bootstrap.sql
+          if-no-files-found: error
+          retention-days: 1
 
   docker-build:
     runs-on: ubuntu-latest
