@@ -1,14 +1,37 @@
+import { fileURLToPath } from "node:url";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig, loadEnv } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import { nitro } from "nitro/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 
+const NODE_DATABASE_PROVIDER = fileURLToPath(
+  new URL("./src/db/provider.node.ts", import.meta.url),
+);
+const NODE_SERVER_ENTRY = fileURLToPath(
+  new URL("./src/server.node.ts", import.meta.url),
+);
+const NODE_CLOUDFLARE_WORKERS = fileURLToPath(
+  new URL("./src/server/lib/cloudflare-workers.node.ts", import.meta.url),
+);
+const NODE_CLOUDFLARE_WORKFLOWS = fileURLToPath(
+  new URL("./src/server/lib/cloudflare-workflows.node.ts", import.meta.url),
+);
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const isNodeRuntime = process.env.OPENSEO_RUNTIME === "node";
+  const aliases: Record<string, string> = {};
+  if (isNodeRuntime) {
+    aliases["@/db/provider"] = NODE_DATABASE_PROVIDER;
+    aliases["cloudflare:workers"] = NODE_CLOUDFLARE_WORKERS;
+    aliases["cloudflare:workflows"] = NODE_CLOUDFLARE_WORKFLOWS;
+  }
+
   const port = process.env.PORT
     ? Number(process.env.PORT)
     : env.PORT
@@ -30,6 +53,9 @@ export default defineConfig(({ mode }) => {
       "POSTHOG_HOST",
       "TURNSTILE_SITE_KEY",
     ],
+    resolve: {
+      alias: aliases,
+    },
     server: {
       allowedHosts,
       port,
@@ -52,9 +78,23 @@ export default defineConfig(({ mode }) => {
             },
           })
         : null,
-      cloudflare({ inspectorPort: false, viteEnvironment: { name: "ssr" } }),
+      isNodeRuntime
+        ? null
+        : cloudflare({
+            inspectorPort: false,
+            viteEnvironment: { name: "ssr" },
+          }),
       tsConfigPaths(),
-      tanstackStart(),
+      tanstackStart(
+        isNodeRuntime
+          ? {
+              server: {
+                entry: NODE_SERVER_ENTRY,
+              },
+            }
+          : undefined,
+      ),
+      isNodeRuntime ? nitro() : null,
       viteReact(),
       tailwindcss(),
     ],

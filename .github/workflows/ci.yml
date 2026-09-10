@@ -38,6 +38,13 @@ jobs:
       - name: Run tests
         run: pnpm run test:ci
 
+      - name: Build Node/Vercel target
+        run: pnpm run build:node
+        env:
+          OPENSEO_RUNTIME: node
+          DATABASE_PROVIDER: postgres
+          DATABASE_URL: postgresql://build-only.invalid/openseo
+
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
 
@@ -46,6 +53,85 @@ jobs:
 
       - name: Build website
         run: pnpm --dir web run build
+
+  postgres-migrations:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: openseo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d openseo"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/openseo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply Postgres migrations
+        run: pnpm run db:migrate:pg
+
+      - name: Verify migrated schema
+        run: |
+          node --input-type=module <<'NODE'
+          import postgres from "postgres";
+
+          const sql = postgres(process.env.POSTGRES_DATABASE_URL, { max: 1 });
+          try {
+            const [{ count }] = await sql`
+              select count(*)::int as count
+              from drizzle.__drizzle_migrations
+            `;
+            if (count !== 21) {
+              throw new Error(`Expected 21 Drizzle migrations, found ${count}`);
+            }
+
+            const expectedTables = [
+              "projects",
+              "gsc_connections",
+              "ga4_connections",
+              "audits",
+              "rank_tracking_configs",
+              "user",
+              "organization",
+            ];
+            for (const table of expectedTables) {
+              const [{ relation }] = await sql`
+                select to_regclass(${`public.${table}`})::text as relation
+              `;
+              if (!relation) {
+                throw new Error(`Expected migrated table public.${table}`);
+              }
+            }
+          } finally {
+            await sql.end();
+          }
+          NODE
 
   docker-build:
     runs-on: ubuntu-latest
