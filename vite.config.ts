@@ -82,7 +82,15 @@ export default defineConfig(({ mode }) => {
             viteEnvironment: { name: "ssr" },
           }),
       tsConfigPaths(),
-      tanstackStart(),
+      tanstackStart(
+        isNodeRuntime
+          ? {
+              server: {
+                entry: "src/server.node.ts",
+              },
+            }
+          : undefined,
+      ),
       isNodeRuntime ? nitro() : null,
       viteReact(),
       tailwindcss(),
