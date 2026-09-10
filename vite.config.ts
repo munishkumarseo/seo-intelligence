@@ -12,6 +12,9 @@ import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 const NODE_DATABASE_PROVIDER = fileURLToPath(
   new URL("./src/db/provider.node.ts", import.meta.url),
 );
+const NODE_SERVER_ENTRY = fileURLToPath(
+  new URL("./src/server.node.ts", import.meta.url),
+);
 const NODE_CLOUDFLARE_WORKERS = fileURLToPath(
   new URL("./src/server/lib/cloudflare-workers.node.ts", import.meta.url),
 );
@@ -86,7 +89,7 @@ export default defineConfig(({ mode }) => {
         isNodeRuntime
           ? {
               server: {
-                entry: "src/server.node.ts",
+                entry: NODE_SERVER_ENTRY,
               },
             }
           : undefined,
