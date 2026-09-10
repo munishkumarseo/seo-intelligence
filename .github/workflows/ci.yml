@@ -23,6 +23,9 @@ jobs:
       - name: Inventory Cloudflare runtime imports
         run: grep -R --line-number --include='*.ts' --include='*.tsx' 'cloudflare:workers' src || true
 
+      - name: Inventory Agents SDK imports
+        run: grep -R --line-number --include='*.ts' --include='*.tsx' -E "from ['\"]agents(/[^'\"]*)?['\"]|import\(['\"]agents(/[^'\"]*)?['\"]\)" src || true
+
   ci:
     runs-on: ubuntu-latest
 
