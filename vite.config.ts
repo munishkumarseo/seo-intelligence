@@ -12,6 +12,9 @@ import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 const NODE_DATABASE_PROVIDER = fileURLToPath(
   new URL("./src/db/provider.node.ts", import.meta.url),
 );
+const NODE_CLOUDFLARE_WORKERS = fileURLToPath(
+  new URL("./src/server/lib/cloudflare-workers.node.ts", import.meta.url),
+);
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -19,6 +22,7 @@ export default defineConfig(({ mode }) => {
   const aliases: Record<string, string> = {};
   if (isNodeRuntime) {
     aliases["@/db/provider"] = NODE_DATABASE_PROVIDER;
+    aliases["cloudflare:workers"] = NODE_CLOUDFLARE_WORKERS;
   }
 
   const port = process.env.PORT
