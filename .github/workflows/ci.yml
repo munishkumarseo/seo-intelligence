@@ -74,7 +74,6 @@ jobs:
 
     env:
       POSTGRES_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/openseo
-      PGPASSWORD: postgres
 
     steps:
       - name: Checkout
@@ -137,12 +136,14 @@ jobs:
       - name: Build Neon bootstrap SQL
         run: |
           set -euo pipefail
-          pg_dump "$POSTGRES_DATABASE_URL" \
+          POSTGRES_CONTAINER="$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n1)"
+          test -n "$POSTGRES_CONTAINER"
+          docker exec "$POSTGRES_CONTAINER" pg_dump -U postgres -d openseo \
             --schema-only \
             --no-owner \
             --no-privileges \
             > open-seo-neon-bootstrap.sql
-          pg_dump "$POSTGRES_DATABASE_URL" \
+          docker exec "$POSTGRES_CONTAINER" pg_dump -U postgres -d openseo \
             --data-only \
             --inserts \
             --column-inserts \
@@ -154,10 +155,12 @@ jobs:
       - name: Verify bootstrap SQL restores cleanly
         run: |
           set -euo pipefail
-          createdb -h 127.0.0.1 -U postgres openseo_bootstrap
-          psql -h 127.0.0.1 -U postgres -d openseo_bootstrap \
+          POSTGRES_CONTAINER="$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n1)"
+          test -n "$POSTGRES_CONTAINER"
+          docker exec "$POSTGRES_CONTAINER" createdb -U postgres openseo_bootstrap
+          docker exec -i "$POSTGRES_CONTAINER" psql -U postgres -d openseo_bootstrap \
             -v ON_ERROR_STOP=1 \
-            -f open-seo-neon-bootstrap.sql
+            < open-seo-neon-bootstrap.sql
           BOOTSTRAP_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/openseo_bootstrap \
           node --input-type=module <<'NODE'
           import postgres from "postgres";
