@@ -15,6 +15,10 @@ export function waitUntil(promise: Promise<unknown>): void {
 
 export class WorkflowEntrypoint {
   constructor(..._args: unknown[]) {
+    WorkflowEntrypoint.unsupported();
+  }
+
+  static unsupported(): never {
     throw new Error(
       "Cloudflare Workflows are unavailable in the Node/Vercel runtime.",
     );
@@ -23,6 +27,10 @@ export class WorkflowEntrypoint {
 
 export class DurableObject {
   constructor(..._args: unknown[]) {
+    DurableObject.unsupported();
+  }
+
+  static unsupported(): never {
     throw new Error(
       "Cloudflare Durable Objects are unavailable in the Node/Vercel runtime.",
     );
