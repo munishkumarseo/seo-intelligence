@@ -11,6 +11,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  migration-bundle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Build canonical migration bundle
+        run: |
+          set -euo pipefail
+          : > open-seo-postgres-migrations.sql
+          for file in $(find drizzle-pg -maxdepth 1 -type f -name '*.sql' | sort); do
+            printf '\n-- BEGIN %s\n' "$file" >> open-seo-postgres-migrations.sql
+            sed '/^--> statement-breakpoint$/d' "$file" >> open-seo-postgres-migrations.sql
+            printf '\n-- END %s\n' "$file" >> open-seo-postgres-migrations.sql
+          done
+          test "$(find drizzle-pg -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 21
+
+      - name: Upload canonical migration bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-seo-postgres-migrations
+          path: open-seo-postgres-migrations.sql
+          if-no-files-found: error
+          retention-days: 1
+
   ci:
     runs-on: ubuntu-latest
 
